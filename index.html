@@ -1,0 +1,1257 @@
+<!doctype html>
+<title>PRIDE Training Log</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap">
+
+<style>
+:root {
+  --cream: #EDEAE3;
+  --cream-dark: #DDD9D0;
+  --gold: #9A6F20;
+  --gold-light: #B8891E;
+  --gold-pale: #F5EDD6;
+  --dark: #1C1916;
+  --dark-mid: #3D3630;
+  --mid: #7A6E65;
+  --white: #FAFAF8;
+  --border: #C8C0B2;
+  --danger: #B03A2E;
+  --success: #2D6A4F;
+  --radius: 6px;
+  --shadow: 0 2px 8px rgba(28,25,22,0.10);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --cream: #1F1D1A;
+    --cream-dark: #2A2724;
+    --gold: #C8913A;
+    --gold-light: #D9A84A;
+    --gold-pale: #2A2416;
+    --dark: #F0EDE6;
+    --dark-mid: #CEC8BE;
+    --mid: #9A9088;
+    --white: #141210;
+    --border: #3A3630;
+    --danger: #E05A4E;
+    --success: #4A9E78;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --cream: #1F1D1A;
+  --cream-dark: #2A2724;
+  --gold: #C8913A;
+  --gold-light: #D9A84A;
+  --gold-pale: #2A2416;
+  --dark: #F0EDE6;
+  --dark-mid: #CEC8BE;
+  --mid: #9A9088;
+  --white: #141210;
+  --border: #3A3630;
+  --danger: #E05A4E;
+  --success: #4A9E78;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--cream); color: var(--dark); font-size: 14px; line-height: 1.5; }
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ── LOGIN ── */
+#screen-login {
+  align-items: center;
+  justify-content: center;
+  background: var(--dark);
+  padding: 32px 16px;
+}
+.login-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.login-logo {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.login-logo .pride-text {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 6px;
+}
+.login-logo .sub {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--mid);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.login-logo .pechanga-line {
+  font-size: 10px;
+  color: var(--mid);
+  margin-top: 6px;
+  letter-spacing: 1px;
+}
+
+/* ── FORM CONTROLS ── */
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--mid); margin-bottom: 6px; }
+.field input, .field select, .field textarea {
+  width: 100%; padding: 10px 12px;
+  border: 1.5px solid var(--border); border-radius: var(--radius);
+  background: var(--cream); color: var(--dark);
+  font-family: inherit; font-size: 14px;
+  transition: border-color 0.15s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none; border-color: var(--gold);
+}
+.field textarea { resize: vertical; min-height: 80px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 20px; border-radius: var(--radius);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; transition: all 0.15s;
+  letter-spacing: 0.3px;
+}
+.btn-primary { background: var(--gold); color: #fff; }
+.btn-primary:hover { background: var(--gold-light); }
+.btn-outline { background: transparent; color: var(--gold); border: 1.5px solid var(--gold); }
+.btn-outline:hover { background: var(--gold-pale); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-ghost { background: transparent; color: var(--mid); border: 1.5px solid var(--border); }
+.btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+.btn-full { width: 100%; }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+
+.error-msg { color: var(--danger); font-size: 12px; margin-top: 8px; display: none; }
+.error-msg.show { display: block; }
+.success-msg { color: var(--success); font-size: 12px; margin-top: 8px; display: none; }
+.success-msg.show { display: block; }
+
+/* ── APP SHELL ── */
+#screen-app { background: var(--cream); }
+.topbar {
+  background: var(--dark); color: var(--cream);
+  padding: 0 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; position: sticky; top: 0; z-index: 100;
+  border-bottom: 2px solid var(--gold);
+}
+.topbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--gold); letter-spacing: 3px; }
+.topbar-user { display: flex; align-items: center; gap: 12px; }
+.topbar-user span { font-size: 12px; color: var(--mid); }
+.topbar-user .badge-admin { background: var(--gold); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.5px; }
+
+.app-content { padding: 24px 20px; max-width: 900px; margin: 0 auto; }
+
+/* ── TABS ── */
+.tabs { display: flex; gap: 2px; background: var(--cream-dark); border-radius: 8px; padding: 3px; margin-bottom: 24px; width: fit-content; }
+.tab-btn {
+  padding: 8px 18px; border-radius: 6px; border: none; background: transparent;
+  font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+  color: var(--mid); transition: all 0.15s;
+}
+.tab-btn.active { background: var(--white); color: var(--dark); box-shadow: var(--shadow); font-weight: 600; }
+.tab-btn:hover:not(.active) { color: var(--dark); }
+
+/* ── SECTION CARD ── */
+.section-card {
+  background: var(--white); border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-bottom: 20px; overflow: hidden;
+}
+.section-header {
+  background: var(--gold-pale); border-bottom: 1px solid var(--border);
+  padding: 12px 20px; display: flex; align-items: center; gap: 10px;
+}
+.section-badge {
+  background: var(--gold); color: #fff;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+  padding: 3px 10px; border-radius: 20px; text-transform: uppercase;
+}
+.section-title { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 700; color: var(--dark); }
+.section-body { padding: 20px; }
+
+/* ── PERIOD PICKER ── */
+.period-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+@media (max-width: 600px) { .period-grid { grid-template-columns: repeat(2,1fr); } }
+.period-card {
+  border: 2px solid var(--border); border-radius: 8px;
+  padding: 14px 12px; text-align: center; cursor: pointer;
+  transition: all 0.15s; background: var(--white);
+}
+.period-card:hover { border-color: var(--gold); }
+.period-card.selected { border-color: var(--gold); background: var(--gold-pale); }
+.period-card .day-num { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; color: var(--gold); line-height: 1; }
+.period-card .day-lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: var(--mid); text-transform: uppercase; margin-top: 2px; }
+
+/* ── CHECKLIST ── */
+.checklist { display: grid; gap: 6px; }
+.check-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  border: 1px solid transparent; transition: all 0.12s;
+}
+.check-item:hover { background: var(--cream); }
+.check-item input[type="checkbox"] { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }
+.check-item .check-label { font-size: 13px; color: var(--dark); }
+.check-item .check-sub { font-size: 11px; color: var(--mid); margin-top: 1px; }
+.check-item.checked { background: var(--gold-pale); border-color: var(--border); }
+
+/* ── SKILL ROWS ── */
+.skill-table { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.skill-row { display: grid; align-items: start; border-bottom: 1px solid var(--border); }
+.skill-row:last-child { border-bottom: none; }
+.skill-row-head { background: var(--cream-dark); padding: 8px 14px; }
+.skill-row-head .skill-name { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--dark); }
+.skill-row-head .skill-desc { font-size: 11px; color: var(--mid); margin-top: 2px; }
+.skill-row-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; }
+@media (max-width: 500px) { .skill-row-fields { grid-template-columns: 1fr; } }
+.skill-cell { padding: 8px 12px; border-right: 1px solid var(--border); }
+.skill-cell:last-child { border-right: none; }
+.skill-cell label { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--mid); display: block; margin-bottom: 4px; }
+.skill-cell input { width: 100%; padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--cream); color: var(--dark); font-size: 12px; font-family: inherit; }
+.skill-cell input:focus { outline: none; border-color: var(--gold); }
+
+/* ── RATING BUTTONS ── */
+.rating-group { display: flex; gap: 1px; border-radius: 6px; overflow: hidden; border: 1.5px solid var(--border); }
+.rating-opt { flex: 1; }
+.rating-opt input { display: none; }
+.rating-opt label {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 10px 6px; cursor: pointer; background: var(--cream);
+  transition: all 0.12s; text-align: center; gap: 2px;
+  border-right: 1px solid var(--border); line-height: 1.2;
+}
+.rating-opt:last-child label { border-right: none; }
+.rating-opt label .r-num { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--gold); }
+.rating-opt label .r-lbl { font-size: 10px; font-weight: 600; letter-spacing: 0.3px; color: var(--mid); text-transform: uppercase; }
+.rating-opt input:checked + label { background: var(--gold); }
+.rating-opt input:checked + label .r-num { color: #fff; }
+.rating-opt input:checked + label .r-lbl { color: rgba(255,255,255,0.85); }
+
+/* ── COMP TABLE ── */
+.comp-table { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.comp-row { display: grid; grid-template-columns: 180px 1fr; align-items: center; border-bottom: 1px solid var(--border); }
+.comp-row:last-child { border-bottom: none; }
+.comp-name { padding: 12px 16px; font-size: 13px; font-weight: 600; color: var(--dark); background: var(--cream-dark); border-right: 1px solid var(--border); }
+.comp-name .comp-sub { font-size: 11px; color: var(--mid); font-weight: 400; margin-top: 2px; }
+.comp-rating { padding: 10px 16px; }
+@media (max-width: 500px) {
+  .comp-row { grid-template-columns: 1fr; }
+  .comp-name { border-right: none; border-bottom: 1px solid var(--border); }
+}
+
+/* ── FORM HEADER ── */
+.form-header-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 560px) { .form-header-grid { grid-template-columns: 1fr; } }
+.form-divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap { margin-bottom: 6px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--mid); margin-bottom: 4px; }
+.progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.3s; }
+
+/* ── ADMIN TABLE ── */
+.eval-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.eval-table th { background: var(--dark); color: var(--cream); padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+.eval-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--dark); vertical-align: top; }
+.eval-table tr:hover td { background: var(--gold-pale); }
+.eval-table .period-pill {
+  display: inline-block; padding: 2px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; background: var(--gold); color: #fff;
+  letter-spacing: 0.3px;
+}
+
+/* ── DETAIL MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(28,25,22,0.7); z-index: 200;
+  align-items: flex-start; justify-content: center; padding: 20px;
+  overflow-y: auto;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--white); border-radius: 12px;
+  width: 100%; max-width: 760px;
+  padding: 28px; margin: auto;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+}
+.modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.modal-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--dark); }
+.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--mid); padding: 2px 6px; border-radius: 4px; }
+.modal-close:hover { background: var(--cream); color: var(--dark); }
+
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+@media (max-width: 480px) { .detail-grid { grid-template-columns: 1fr; } }
+.detail-item label { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--mid); }
+.detail-item p { font-size: 13px; color: var(--dark); margin-top: 2px; }
+.detail-section { margin-top: 16px; }
+.detail-section h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gold); border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 10px; }
+.detail-text { font-size: 13px; color: var(--dark-mid); white-space: pre-wrap; background: var(--cream); padding: 10px 12px; border-radius: 6px; }
+.detail-ratings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.detail-rating-box { text-align: center; border: 1.5px solid var(--border); border-radius: 6px; padding: 8px; }
+.detail-rating-box .dr-val { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 700; color: var(--gold); }
+.detail-rating-box .dr-lbl { font-size: 10px; font-weight: 600; color: var(--mid); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── FILTER BAR ── */
+.filter-bar { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-bar .field { margin-bottom: 0; flex: 1; min-width: 140px; }
+
+/* ── MISC ── */
+.page-title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+.page-sub { font-size: 13px; color: var(--mid); margin-bottom: 20px; }
+.empty-state { text-align: center; padding: 48px 20px; color: var(--mid); }
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.chip { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--cream-dark); color: var(--dark-mid); margin: 2px; }
+.chip.green { background: #D4EDDA; color: #1A5C38; }
+.chip.amber { background: #FFF3CD; color: #856404; }
+
+.sticky-footer {
+  position: sticky; bottom: 0; background: var(--white);
+  border-top: 1px solid var(--border); padding: 14px 20px;
+  display: flex; justify-content: flex-end; gap: 10px; z-index: 50;
+}
+
+/* setup instructions */
+.setup-banner {
+  background: #FFF3CD; border: 1px solid #FFEAA7; border-radius: 8px;
+  padding: 16px 20px; margin-bottom: 20px;
+  font-size: 13px; color: #856404;
+}
+.setup-banner strong { display: block; margin-bottom: 6px; }
+.setup-banner code { background: rgba(0,0,0,0.08); padding: 1px 5px; border-radius: 3px; font-family: monospace; }
+</style>
+
+<!-- ══════════════════════════════════════════ LOGIN SCREEN ══════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="pride-text">PRIDE</div>
+      <div class="sub">Team Member Training Log</div>
+      <div class="pechanga-line">Pechanga Resort Casino · Food & Beverage</div>
+    </div>
+
+    <div id="view-signin">
+      <div class="field">
+        <label>Manager Email</label>
+        <input type="email" id="login-email" placeholder="name@pechanga.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="error-msg" id="login-error"></div>
+      <button class="btn btn-primary btn-full" onclick="signIn()" style="margin-top:4px">
+        <span id="login-label">Sign In</span>
+      </button>
+      <div style="text-align:center; margin-top:12px;">
+        <a href="#" style="font-size:12px; color:var(--gold);" onclick="showReset(); return false;">Forgot password?</a>
+      </div>
+    </div>
+
+    <div id="view-reset" style="display:none;">
+      <p style="font-size:13px; color:var(--mid); margin-bottom:14px;">Enter your email and we'll send a reset link.</p>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="reset-email" placeholder="name@pechanga.com">
+      </div>
+      <div class="error-msg" id="reset-error"></div>
+      <div class="success-msg" id="reset-success">Reset email sent! Check your inbox.</div>
+      <button class="btn btn-primary btn-full" onclick="sendReset()">Send Reset Link</button>
+      <div style="text-align:center; margin-top:12px;">
+        <a href="#" style="font-size:12px; color:var(--gold);" onclick="showSignin(); return false;">← Back to sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ APP SCREEN ══════════ -->
+<div id="screen-app" class="screen">
+  <div class="topbar">
+    <div class="topbar-brand">PRIDE</div>
+    <div class="topbar-user">
+      <span id="topbar-name">Manager</span>
+      <span id="topbar-admin-badge" class="badge-admin" hidden>ADMIN</span>
+      <button class="btn btn-ghost btn-sm" onclick="signOut()" style="border-color:rgba(255,255,255,0.2); color:var(--cream);">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="app-content">
+    <!-- Admin / Manager tabs -->
+    <div id="tab-row" class="tabs" style="display:none;">
+      <button class="tab-btn active" onclick="switchTab('new')">New Evaluation</button>
+      <button class="tab-btn" onclick="switchTab('admin')">All Evaluations</button>
+    </div>
+
+    <!-- ─── NEW EVALUATION ─── -->
+    <div id="panel-new">
+      <div class="page-title">New Evaluation</div>
+      <p class="page-sub">Complete the PRIDE Training Log for a team member.</p>
+
+      <!-- Setup notice -->
+      <div class="setup-banner" id="firebase-setup-notice">
+        <strong>⚙️ Firebase Setup Required</strong>
+        Replace the Firebase config at the bottom of this file with your project's credentials, then add managers via Firebase Console → Authentication → Users. Remove this banner by setting <code>SHOW_SETUP = false</code> in the script.
+      </div>
+
+      <!-- Section 0: Header Info -->
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-badge">Info</span>
+          <span class="section-title">Team Member Information</span>
+        </div>
+        <div class="section-body">
+          <div class="form-header-grid">
+            <div class="field">
+              <label>Team Member Name</label>
+              <input type="text" id="f-tm-name" placeholder="Full name">
+            </div>
+            <div class="field">
+              <label>Outlet / Location</label>
+              <input type="text" id="f-outlet" placeholder="e.g. Great Oak, Blazing Noodles">
+            </div>
+            <div class="field">
+              <label>Position / Title</label>
+              <input type="text" id="f-position" placeholder="e.g. Food Server, Busser">
+            </div>
+            <div class="field">
+              <label>Start Date</label>
+              <input type="date" id="f-start-date">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Period Selector -->
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-badge">Period</span>
+          <span class="section-title">Evaluation Period</span>
+        </div>
+        <div class="section-body">
+          <div class="period-grid">
+            <div class="period-card" data-period="14" onclick="selectPeriod(this)">
+              <div class="day-num">14</div>
+              <div class="day-lbl">Day</div>
+            </div>
+            <div class="period-card" data-period="30" onclick="selectPeriod(this)">
+              <div class="day-num">30</div>
+              <div class="day-lbl">Day</div>
+            </div>
+            <div class="period-card" data-period="45" onclick="selectPeriod(this)">
+              <div class="day-num">45</div>
+              <div class="day-lbl">Day</div>
+            </div>
+            <div class="period-card" data-period="60" onclick="selectPeriod(this)">
+              <div class="day-num">60</div>
+              <div class="day-lbl">Day</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Evaluation Date</label>
+            <input type="date" id="f-eval-date">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sections that show after period is selected -->
+      <div id="period-sections" hidden>
+
+        <!-- Section A: Classes -->
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-badge">A</span>
+            <span class="section-title">Class / Training Module Documentation</span>
+          </div>
+          <div class="section-body">
+            <div id="classes-list" class="checklist"></div>
+          </div>
+        </div>
+
+        <!-- Section B: Skills -->
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-badge">B</span>
+            <span class="section-title">Skills Trained This Period</span>
+          </div>
+          <div class="section-body">
+            <p style="font-size:12px; color:var(--mid); margin-bottom:12px;">Enter trainer name, date trained, and date witnessed for each skill completed.</p>
+            <div id="skills-table" class="skill-table"></div>
+          </div>
+        </div>
+
+        <!-- Section C: Policies -->
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-badge">C</span>
+            <span class="section-title">Policies & Procedures Reviewed In Person with Trainer</span>
+          </div>
+          <div class="section-body">
+            <div class="field">
+              <label>Policies Reviewed</label>
+              <textarea id="f-policies" placeholder="List all policies and procedures reviewed during this period..." rows="5"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section D: Expectations -->
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-badge">D</span>
+            <span class="section-title">Expectations for Next Period</span>
+          </div>
+          <div class="section-body">
+            <div class="field">
+              <label>Expectations & Goals</label>
+              <textarea id="f-expectations" placeholder="Document specific expectations and goals for the team member to accomplish by the next evaluation..." rows="5"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section E: Competency Ratings -->
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-badge">E</span>
+            <span class="section-title">Competency Ratings</span>
+          </div>
+          <div class="section-body">
+            <p style="font-size:12px; color:var(--mid); margin-bottom:14px;">
+              <strong>3 — Pride (Exceeds):</strong> Consistently exceeds expectations &nbsp;|&nbsp;
+              <strong>2 — Passion (Meets):</strong> Meets expectations consistently &nbsp;|&nbsp;
+              <strong>1 — Professionalism (Improves):</strong> Needs improvement
+            </p>
+            <div class="comp-table" id="comp-table"></div>
+          </div>
+        </div>
+
+        <!-- Section F: Comments -->
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-badge">F</span>
+            <span class="section-title">Trainer Observations</span>
+          </div>
+          <div class="section-body">
+            <div class="field">
+              <label>Strengths & Highlights</label>
+              <textarea id="f-strengths" placeholder="Describe specific strengths and positive behaviors observed..." rows="4"></textarea>
+            </div>
+            <div class="field">
+              <label>Areas for Improvement</label>
+              <textarea id="f-improvements" placeholder="Describe specific areas needing development..." rows="4"></textarea>
+            </div>
+            <div class="field">
+              <label>Trainer Observation Notes / Specific Standards Practiced</label>
+              <textarea id="f-trainer-notes" placeholder="Document specific standards practiced, examples observed, situations handled..." rows="5"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section G: Signatures -->
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-badge">G</span>
+            <span class="section-title">Signatures & Acknowledgment</span>
+          </div>
+          <div class="section-body">
+            <div class="form-header-grid">
+              <div class="field">
+                <label>Trainer / Evaluator Name</label>
+                <input type="text" id="f-trainer-name" placeholder="Full name">
+              </div>
+              <div class="field">
+                <label>Trainer Signature (Type Full Name)</label>
+                <input type="text" id="f-trainer-sig" placeholder="Type your full name as signature">
+              </div>
+              <div class="field">
+                <label>Team Member Signature (Type Full Name)</label>
+                <input type="text" id="f-tm-sig" placeholder="Team member types their full name">
+              </div>
+              <div class="field">
+                <label>Manager / Supervisor Name</label>
+                <input type="text" id="f-manager-sig" placeholder="Reviewing manager name">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="error-msg" id="submit-error" style="margin-bottom:12px; font-size:13px;"></div>
+        <div class="success-msg" id="submit-success" style="margin-bottom:12px; font-size:13px;"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; padding-bottom:40px;">
+          <button class="btn btn-ghost" onclick="clearForm()">Clear Form</button>
+          <button class="btn btn-primary" onclick="submitEvaluation()">
+            <span id="submit-label">Submit Evaluation</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── ADMIN PANEL ─── -->
+    <div id="panel-admin" hidden>
+      <div class="page-title">All Evaluations</div>
+      <p class="page-sub">Review and filter submitted PRIDE Training Log evaluations.</p>
+
+      <div class="filter-bar">
+        <div class="field">
+          <label>Period</label>
+          <select id="filter-period" onchange="filterEvals()">
+            <option value="">All Periods</option>
+            <option value="14">14-Day</option>
+            <option value="30">30-Day</option>
+            <option value="45">45-Day</option>
+            <option value="60">60-Day</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Outlet</label>
+          <input type="text" id="filter-outlet" placeholder="Filter by outlet..." oninput="filterEvals()">
+        </div>
+        <div class="field">
+          <label>Team Member</label>
+          <input type="text" id="filter-name" placeholder="Filter by name..." oninput="filterEvals()">
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="clearFilters()" style="margin-bottom:0; align-self:flex-end;">Clear</button>
+      </div>
+
+      <div class="section-card" style="overflow:auto;">
+        <table class="eval-table">
+          <thead>
+            <tr>
+              <th>Team Member</th>
+              <th>Outlet</th>
+              <th>Period</th>
+              <th>Eval Date</th>
+              <th>Submitted By</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="eval-table-body">
+            <tr><td colspan="6"><div class="empty-state"><div class="icon">📋</div><p>Loading evaluations…</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── DETAIL MODAL ─── -->
+<div class="modal-overlay" id="detail-modal" onclick="closeModal(event)">
+  <div class="modal-box" id="modal-box">
+    <div class="modal-header">
+      <h2 id="modal-title">Evaluation Detail</h2>
+      <button class="modal-close" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ EMAILJS SDK ══════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/emailjs-com/3.2.0/email.min.js"></script>
+
+<!-- ══════════════════════════════════════════ FIREBASE SDK ══════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════
+//  ⚙️  FIREBASE CONFIG — replace with your project credentials
+//  Get these from: Firebase Console → Project Settings → Your Apps
+// ══════════════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAkgjXG-ACIlZEdBgsyIWTLfzGoDXFTKYc",
+  authDomain: "onboarding-23722.firebaseapp.com",
+  projectId: "onboarding-23722",
+  storageBucket: "onboarding-23722.firebasestorage.app",
+  messagingSenderId: "152179804312",
+  appId: "1:152179804312:web:7ae66d392bfef925b1e8ed"
+};
+
+// Admin email address (gets notified on every submission)
+const ADMIN_EMAIL = "arlo.bedolla@gmail.com";
+
+// Set false once Firebase is configured
+const SHOW_SETUP = false;
+
+// EmailJS credentials
+const EMAILJS_SERVICE_ID  = "service_oltbemc";
+const EMAILJS_TEMPLATE_ID = "template_kf3mzb7";
+const EMAILJS_PUBLIC_KEY  = "nMaBuBhlVwA82QJXU";
+
+// ══════════════════════════════════════════════════════════════════════
+//  DATA — PRIDE Form Content
+// ══════════════════════════════════════════════════════════════════════
+const PERIOD_DATA = {
+  14: {
+    classes: [
+      { id: "orientation", label: "New Team Member Orientation", sub: "HR onboarding & property tour" },
+      { id: "food_safety_intro", label: "Food Safety & Handling — Introduction", sub: "ServSafe basics, allergens, cross-contamination" },
+      { id: "pos_training", label: "POS System Training", sub: "InfoGenesis ordering and payment processing" },
+      { id: "menu_basics", label: "Menu Knowledge — Basics", sub: "Menu overview, descriptions, modifiers" },
+      { id: "pride_standards", label: "PRIDE Service Standards Overview", sub: "Pechanga service philosophy and expectations" },
+      { id: "team_comms", label: "Team Communications", sub: "Communication board, policy board, pre-shift board locations" },
+      { id: "uniforms_grooming", label: "Uniforms & Grooming Standards", sub: "Dress code, appearance requirements" },
+      { id: "safety_emergency", label: "Safety & Emergency Procedures", sub: "Emergency exits, incident reporting" },
+    ],
+    skills: [
+      { id: "greeting_seating", name: "Greeting & Seating", desc: "Warmly greeting guests within 30 seconds, assisting with seating" },
+      { id: "table_setup", name: "Table Setup & Reset", desc: "Proper mise en place, reset standards between guests" },
+      { id: "order_taking", name: "Order Taking", desc: "Accurate ordering and repeating orders back to the guest" },
+      { id: "menu_knowledge", name: "Menu Knowledge", desc: "Ability to describe menu items, ingredients, allergens" },
+      { id: "team_comm_skills", name: "Team Communication", desc: "Knowing where the communication board, policy board and pre-shift board are" },
+      { id: "pos_basics", name: "POS — Basic Transactions", desc: "Entering orders, modifiers, sending to kitchen" },
+    ],
+    competencies: ["Pride", "Passion", "Professionalism"],
+  },
+  30: {
+    classes: [
+      { id: "menu_intermediate", label: "Menu Knowledge — Intermediate", sub: "Specials, wine/beverage, upselling techniques" },
+      { id: "pos_intermediate", label: "POS — Intermediate Functions", sub: "Splits, voids, discounts, comps" },
+      { id: "hospitality_standards", label: "Hospitality Standards Training", sub: "5/10 Rule, Anticipatory service" },
+      { id: "alcohol_awareness", label: "Alcohol Awareness (TIPS/RBS)", sub: "Responsible alcohol service certification" },
+      { id: "food_safety_review", label: "Food Safety — 30-Day Review", sub: "Temperature control, handwashing, storage" },
+      { id: "cash_handling", label: "Cash Handling Procedures", sub: "Room charges, House Cards, Silver Feathers, PCI compliance" },
+    ],
+    skills: [
+      { id: "menu_knowledge_30", name: "Menu Knowledge", desc: "Menu quiz passed with 85% or higher; full menu, specials, beverage program" },
+      { id: "hospitality_stds", name: "Hospitality Standards", desc: "5/10 Rule, accurate ordering and repeating orders to the guest" },
+      { id: "cash_payments", name: "Cash / Payments", desc: "Room Charges, House Cards, Silver Feathers — all payment types processed correctly" },
+      { id: "shift_readiness", name: "Shift Readiness", desc: "Pays attention during pre-shift, engages in team interaction, arrives prepared" },
+      { id: "upselling", name: "Upselling & Suggestive Selling", desc: "Recommending appetizers, beverages, desserts effectively" },
+      { id: "side_work", name: "Side Work Completion", desc: "Opening and closing duties completed to standard" },
+    ],
+    competencies: ["Pride", "Passion", "Professionalism"],
+  },
+  45: {
+    classes: [
+      { id: "advanced_menu", label: "Advanced Menu & Beverage Training", sub: "Full beverage program, wine pairings, specialty cocktails" },
+      { id: "guest_recovery", label: "Guest Recovery & Service Failures", sub: "PRIDE recovery model, empowerment, escalation" },
+      { id: "pos_advanced", label: "POS — Advanced Functions", sub: "Server banking, reporting, gift cards" },
+      { id: "cross_training", label: "Cross-Training Introduction", sub: "Adjacent role exposure if applicable" },
+      { id: "silver_feathers", label: "Silver Feathers Loyalty Program", sub: "Program overview, enrollments, point redemptions" },
+    ],
+    skills: [
+      { id: "beverage_knowledge", name: "Beverage Knowledge", desc: "Full bar menu, wine list, specialty cocktails — confident recommendations" },
+      { id: "guest_recovery_skill", name: "Guest Recovery", desc: "Ability to identify service failures and apply the PRIDE recovery model" },
+      { id: "speed_efficiency", name: "Speed & Efficiency", desc: "Table turns within standard time frames without sacrificing service quality" },
+      { id: "teamwork", name: "Teamwork & Support", desc: "Proactively assisting teammates, running food, pre-bussing" },
+      { id: "pos_advanced_skill", name: "POS — Advanced", desc: "All payment types, gift cards, server banking completed independently" },
+      { id: "loyalty_program", name: "Silver Feathers Enrollment", desc: "Able to explain and enroll guests in the loyalty program" },
+    ],
+    competencies: ["Pride", "Passion", "Professionalism"],
+  },
+  60: {
+    classes: [
+      { id: "pride_graduation", label: "PRIDE Training Graduation Review", sub: "Recap of all training modules completed" },
+      { id: "ongoing_standards", label: "Ongoing Hospitality Standards Review", sub: "Expectations for independent performance" },
+      { id: "career_development", label: "Career Development & Goals", sub: "Opportunities for growth within F&B" },
+    ],
+    skills: [
+      { id: "independence", name: "Independent Station Work", desc: "Working a full station without trainer support; consistent execution of all standards" },
+      { id: "mentorship", name: "Mentorship Readiness", desc: "Ability to model PRIDE behaviors for newer team members" },
+      { id: "guest_relationships", name: "Guest Relationships", desc: "Recognizing regulars, personalizing service, building rapport" },
+      { id: "all_payments_60", name: "All Payment Methods", desc: "All payment types processed correctly and independently every shift" },
+      { id: "menu_mastery", name: "Menu Mastery", desc: "Full menu knowledge including daily specials, seasonal items, allergen awareness" },
+      { id: "leadership_behavior", name: "Leadership Behaviors", desc: "Demonstrating positive attitude, accountability, and team-first mindset daily" },
+    ],
+    competencies: ["Pride", "Passion", "Professionalism"],
+  }
+};
+
+// ══════════════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════════════
+let db, auth, currentUser, allEvals = [], currentPeriod = null;
+
+firebase.initializeApp(FIREBASE_CONFIG);
+emailjs.init(EMAILJS_PUBLIC_KEY);
+auth = firebase.auth();
+db = firebase.firestore();
+
+if (!SHOW_SETUP) {
+  document.getElementById('firebase-setup-notice').style.display = 'none';
+}
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    showApp(user);
+  } else {
+    currentUser = null;
+    showLogin();
+  }
+});
+
+// Default today's date
+document.getElementById('f-eval-date').value = new Date().toISOString().split('T')[0];
+
+// ══════════════════════════════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════════════════════════════
+function showLogin() {
+  document.getElementById('screen-login').classList.add('active');
+  document.getElementById('screen-app').classList.remove('active');
+}
+function showApp(user) {
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+
+  const name = user.displayName || user.email.split('@')[0];
+  document.getElementById('topbar-name').textContent = name;
+
+  const isAdmin = user.email === ADMIN_EMAIL;
+  document.getElementById('topbar-admin-badge').hidden = !isAdmin;
+  document.getElementById('tab-row').style.display = isAdmin ? '' : 'none';
+
+  if (isAdmin) loadEvals();
+}
+
+async function signIn() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const err = document.getElementById('login-error');
+  const lbl = document.getElementById('login-label');
+  err.classList.remove('show');
+  lbl.innerHTML = '<span class="spinner"></span>';
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+  } catch(e) {
+    err.textContent = humanAuthError(e.code);
+    err.classList.add('show');
+    lbl.textContent = 'Sign In';
+  }
+}
+function signOut() {
+  auth.signOut();
+}
+function showReset() {
+  document.getElementById('view-signin').style.display = 'none';
+  document.getElementById('view-reset').style.display = '';
+}
+function showSignin() {
+  document.getElementById('view-signin').style.display = '';
+  document.getElementById('view-reset').style.display = 'none';
+}
+async function sendReset() {
+  const email = document.getElementById('reset-email').value.trim();
+  const err = document.getElementById('reset-error');
+  const ok = document.getElementById('reset-success');
+  err.classList.remove('show'); ok.classList.remove('show');
+  try {
+    await auth.sendPasswordResetEmail(email);
+    ok.classList.add('show');
+  } catch(e) {
+    err.textContent = humanAuthError(e.code);
+    err.classList.add('show');
+  }
+}
+function humanAuthError(code) {
+  const map = {
+    'auth/wrong-password': 'Incorrect password.',
+    'auth/user-not-found': 'No account found with that email.',
+    'auth/invalid-email': 'Please enter a valid email address.',
+    'auth/too-many-requests': 'Too many attempts. Please try again later.',
+    'auth/network-request-failed': 'Network error. Check your connection.',
+  };
+  return map[code] || 'Sign in failed. Please try again.';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i===0 && tab==='new') || (i===1 && tab==='admin'));
+  });
+  document.getElementById('panel-new').hidden = tab !== 'new';
+  document.getElementById('panel-admin').hidden = tab !== 'admin';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  PERIOD SELECTION
+// ══════════════════════════════════════════════════════════════════════
+function selectPeriod(el) {
+  document.querySelectorAll('.period-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  currentPeriod = parseInt(el.dataset.period);
+  renderPeriodSections(currentPeriod);
+  document.getElementById('period-sections').hidden = false;
+  setTimeout(() => document.getElementById('period-sections').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+}
+
+function renderPeriodSections(period) {
+  const data = PERIOD_DATA[period];
+
+  // Classes
+  const classList = document.getElementById('classes-list');
+  classList.innerHTML = data.classes.map(c => `
+    <label class="check-item" id="check-wrap-${c.id}">
+      <input type="checkbox" id="class-${c.id}" onchange="updateCheckStyle('${c.id}')">
+      <div>
+        <div class="check-label">${c.label}</div>
+        <div class="check-sub">${c.sub}</div>
+      </div>
+    </label>
+  `).join('');
+
+  // Skills
+  const skillsTable = document.getElementById('skills-table');
+  skillsTable.innerHTML = data.skills.map(s => `
+    <div>
+      <div class="skill-row-head">
+        <div class="skill-name">${s.name}</div>
+        <div class="skill-desc">${s.desc}</div>
+      </div>
+      <div class="skill-row-fields">
+        <div class="skill-cell">
+          <label>Trainer Name</label>
+          <input type="text" id="skill-trainer-${s.id}" placeholder="Trainer name">
+        </div>
+        <div class="skill-cell">
+          <label>Date Trained</label>
+          <input type="date" id="skill-trained-${s.id}">
+        </div>
+        <div class="skill-cell">
+          <label>Date Witnessed</label>
+          <input type="date" id="skill-witnessed-${s.id}">
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // Competencies
+  const compTable = document.getElementById('comp-table');
+  compTable.innerHTML = data.competencies.map(comp => {
+    const id = comp.toLowerCase();
+    return `
+      <div class="comp-row">
+        <div class="comp-name">
+          ${comp}
+          <div class="comp-sub">${compDesc(comp)}</div>
+        </div>
+        <div class="comp-rating">
+          <div class="rating-group">
+            <div class="rating-opt">
+              <input type="radio" name="comp-${id}" id="comp-${id}-3" value="3">
+              <label for="comp-${id}-3"><span class="r-num">3</span><span class="r-lbl">Pride</span></label>
+            </div>
+            <div class="rating-opt">
+              <input type="radio" name="comp-${id}" id="comp-${id}-2" value="2">
+              <label for="comp-${id}-2"><span class="r-num">2</span><span class="r-lbl">Passion</span></label>
+            </div>
+            <div class="rating-opt">
+              <input type="radio" name="comp-${id}" id="comp-${id}-1" value="1">
+              <label for="comp-${id}-1"><span class="r-num">1</span><span class="r-lbl">Improve</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function compDesc(comp) {
+  return { Pride: "Exceeds expectations consistently", Passion: "Meets expectations consistently", Professionalism: "Demonstrates professional conduct" }[comp] || '';
+}
+function updateCheckStyle(id) {
+  const cb = document.getElementById('class-' + id);
+  document.getElementById('check-wrap-' + id).classList.toggle('checked', cb.checked);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  SUBMIT
+// ══════════════════════════════════════════════════════════════════════
+async function submitEvaluation() {
+  const err = document.getElementById('submit-error');
+  const ok = document.getElementById('submit-success');
+  const lbl = document.getElementById('submit-label');
+  err.classList.remove('show'); ok.classList.remove('show');
+
+  // Validate required fields
+  const tmName = document.getElementById('f-tm-name').value.trim();
+  const outlet = document.getElementById('f-outlet').value.trim();
+  const evalDate = document.getElementById('f-eval-date').value;
+  if (!tmName) { err.textContent = 'Team Member Name is required.'; err.classList.add('show'); return; }
+  if (!outlet) { err.textContent = 'Outlet is required.'; err.classList.add('show'); return; }
+  if (!currentPeriod) { err.textContent = 'Please select an evaluation period.'; err.classList.add('show'); return; }
+  if (!evalDate) { err.textContent = 'Evaluation date is required.'; err.classList.add('show'); return; }
+
+  const data = PERIOD_DATA[currentPeriod];
+
+  // Collect classes
+  const classes = {};
+  data.classes.forEach(c => {
+    classes[c.id] = { label: c.label, completed: document.getElementById('class-'+c.id)?.checked || false };
+  });
+
+  // Collect skills
+  const skills = {};
+  data.skills.forEach(s => {
+    skills[s.id] = {
+      name: s.name,
+      trainer: document.getElementById('skill-trainer-'+s.id)?.value.trim() || '',
+      dateTrained: document.getElementById('skill-trained-'+s.id)?.value || '',
+      dateWitnessed: document.getElementById('skill-witnessed-'+s.id)?.value || '',
+    };
+  });
+
+  // Collect competencies
+  const competencies = {};
+  data.competencies.forEach(comp => {
+    const id = comp.toLowerCase();
+    const sel = document.querySelector(`input[name="comp-${id}"]:checked`);
+    competencies[comp] = sel ? parseInt(sel.value) : null;
+  });
+
+  const evaluation = {
+    tmName, outlet,
+    position: document.getElementById('f-position').value.trim(),
+    startDate: document.getElementById('f-start-date').value,
+    period: currentPeriod,
+    evalDate,
+    classes, skills, competencies,
+    policies: document.getElementById('f-policies').value.trim(),
+    expectations: document.getElementById('f-expectations').value.trim(),
+    strengths: document.getElementById('f-strengths').value.trim(),
+    improvements: document.getElementById('f-improvements').value.trim(),
+    trainerNotes: document.getElementById('f-trainer-notes').value.trim(),
+    trainerName: document.getElementById('f-trainer-name').value.trim(),
+    trainerSig: document.getElementById('f-trainer-sig').value.trim(),
+    tmSig: document.getElementById('f-tm-sig').value.trim(),
+    managerSig: document.getElementById('f-manager-sig').value.trim(),
+    submittedBy: currentUser.email,
+    submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    submittedByName: currentUser.displayName || currentUser.email,
+  };
+
+  lbl.innerHTML = '<span class="spinner"></span> Submitting…';
+  try {
+    await db.collection('evaluations').add(evaluation);
+    // Send email notification via EmailJS or a cloud function
+    await sendEmailNotification(evaluation);
+    ok.textContent = `✓ Evaluation submitted for ${tmName} (${currentPeriod}-Day). A copy has been sent to ${ADMIN_EMAIL}.`;
+    ok.classList.add('show');
+    lbl.textContent = 'Submit Evaluation';
+    setTimeout(() => clearForm(), 3000);
+  } catch(e) {
+    err.textContent = 'Submission failed: ' + (e.message || e);
+    err.classList.add('show');
+    lbl.textContent = 'Submit Evaluation';
+  }
+}
+
+async function sendEmailNotification(ev) {
+  try {
+    const subject = `PRIDE Eval: ${ev.tmName} — ${ev.period}-Day | ${ev.outlet}`;
+    const ratingLines = Object.entries(ev.competencies)
+      .map(([k,v]) => `${k}: ${v ? ['—','Professionalism (1)','Passion (2)','Pride (3)'][v] : 'Not rated'}`).join('\n');
+    const classLines = Object.values(ev.classes)
+      .map(c => `${c.completed ? '☑' : '☐'} ${c.label}`).join('\n');
+    const skillLines = Object.values(ev.skills)
+      .map(s => `${s.name}: Trainer: ${s.trainer||'—'} | Trained: ${s.dateTrained||'—'} | Witnessed: ${s.dateWitnessed||'—'}`).join('\n');
+    const body = [
+      `PRIDE Training Log — ${ev.period}-Day Evaluation`,
+      `Submitted by: ${ev.submittedByName}`,
+      ``,
+      `TEAM MEMBER: ${ev.tmName}`,
+      `Outlet: ${ev.outlet}`,
+      `Position: ${ev.position || '—'}`,
+      `Start Date: ${ev.startDate || '—'}`,
+      `Eval Date: ${ev.evalDate}`,
+      ``,
+      `— A. CLASSES COMPLETED —`,
+      classLines,
+      ``,
+      `— B. SKILLS TRAINED —`,
+      skillLines,
+      ``,
+      `— C. POLICIES REVIEWED —`,
+      ev.policies || '(none)',
+      ``,
+      `— D. EXPECTATIONS FOR NEXT PERIOD —`,
+      ev.expectations || '(none)',
+      ``,
+      `— E. COMPETENCY RATINGS —`,
+      ratingLines,
+      ``,
+      `— F. STRENGTHS & HIGHLIGHTS —`,
+      ev.strengths || '(none)',
+      ``,
+      `— F. AREAS FOR IMPROVEMENT —`,
+      ev.improvements || '(none)',
+      ``,
+      `— F. TRAINER OBSERVATION NOTES —`,
+      ev.trainerNotes || '(none)',
+      ``,
+      `— G. SIGNATURES —`,
+      `Trainer: ${ev.trainerName || '—'} | Signature: ${ev.trainerSig || '—'}`,
+      `Team Member Signature: ${ev.tmSig || '—'}`,
+      `Manager / Supervisor: ${ev.managerSig || '—'}`,
+    ].join('\n');
+
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      subject,
+      body,
+      to_email: ADMIN_EMAIL,
+    });
+    console.log('Email notification sent.');
+  } catch(e) {
+    console.warn('Email notification failed (non-blocking):', e);
+  }
+}
+
+function clearForm() {
+  document.getElementById('f-tm-name').value = '';
+  document.getElementById('f-outlet').value = '';
+  document.getElementById('f-position').value = '';
+  document.getElementById('f-start-date').value = '';
+  document.getElementById('f-eval-date').value = new Date().toISOString().split('T')[0];
+  document.querySelectorAll('.period-card').forEach(c => c.classList.remove('selected'));
+  currentPeriod = null;
+  document.getElementById('period-sections').hidden = true;
+  document.getElementById('submit-error').classList.remove('show');
+  document.getElementById('submit-success').classList.remove('show');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  ADMIN: LOAD & DISPLAY
+// ══════════════════════════════════════════════════════════════════════
+async function loadEvals() {
+  try {
+    const snap = await db.collection('evaluations').orderBy('submittedAt','desc').limit(200).get();
+    allEvals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderEvalTable(allEvals);
+  } catch(e) {
+    console.error(e);
+    document.getElementById('eval-table-body').innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:20px;">Error loading: ${e.message}</td></tr>`;
+  }
+}
+
+function filterEvals() {
+  const period = document.getElementById('filter-period').value;
+  const outlet = document.getElementById('filter-outlet').value.toLowerCase();
+  const name = document.getElementById('filter-name').value.toLowerCase();
+  const filtered = allEvals.filter(e =>
+    (!period || String(e.period) === period) &&
+    (!outlet || (e.outlet||'').toLowerCase().includes(outlet)) &&
+    (!name || (e.tmName||'').toLowerCase().includes(name))
+  );
+  renderEvalTable(filtered);
+}
+function clearFilters() {
+  document.getElementById('filter-period').value = '';
+  document.getElementById('filter-outlet').value = '';
+  document.getElementById('filter-name').value = '';
+  renderEvalTable(allEvals);
+}
+
+function renderEvalTable(evals) {
+  const tbody = document.getElementById('eval-table-body');
+  if (!evals.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">📋</div><p>No evaluations found.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = evals.map(e => {
+    const date = e.evalDate || '—';
+    const sub = e.submittedAt?.toDate ? e.submittedAt.toDate().toLocaleDateString() : '—';
+    return `<tr>
+      <td><strong>${esc(e.tmName)}</strong><br><small style="color:var(--mid)">${esc(e.position||'')}</small></td>
+      <td>${esc(e.outlet||'—')}</td>
+      <td><span class="period-pill">${e.period}-Day</span></td>
+      <td>${date}</td>
+      <td><small>${esc(e.submittedByName||e.submittedBy||'—')}</small><br><small style="color:var(--mid)">${sub}</small></td>
+      <td><button class="btn btn-outline btn-sm" onclick="openDetail('${e.id}')">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openDetail(id) {
+  const e = allEvals.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('modal-title').textContent = `${e.tmName} — ${e.period}-Day Evaluation`;
+
+  const ratingLabel = v => v === 3 ? 'Pride (3)' : v === 2 ? 'Passion (2)' : v === 1 ? 'Professionalism (1)' : '—';
+  const classDone = Object.values(e.classes||{}).filter(c=>c.completed).length;
+  const classTotal = Object.values(e.classes||{}).length;
+
+  const comps = Object.entries(e.competencies||{});
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-item"><label>Outlet</label><p>${esc(e.outlet||'—')}</p></div>
+      <div class="detail-item"><label>Position</label><p>${esc(e.position||'—')}</p></div>
+      <div class="detail-item"><label>Eval Date</label><p>${e.evalDate||'—'}</p></div>
+      <div class="detail-item"><label>Start Date</label><p>${e.startDate||'—'}</p></div>
+      <div class="detail-item"><label>Submitted By</label><p>${esc(e.submittedByName||e.submittedBy||'—')}</p></div>
+      <div class="detail-item"><label>Classes Completed</label><p>${classDone} / ${classTotal}</p></div>
+    </div>
+
+    <div class="detail-section">
+      <h4>Classes / Training Modules</h4>
+      ${Object.values(e.classes||{}).map(c=>`<span class="chip ${c.completed?'green':''}">${c.completed?'☑':'☐'} ${esc(c.label)}</span>`).join('')}
+    </div>
+
+    <div class="detail-section">
+      <h4>Competency Ratings</h4>
+      <div class="detail-ratings">
+        ${comps.map(([k,v])=>`<div class="detail-rating-box"><div class="dr-val">${v||'—'}</div><div class="dr-lbl">${esc(k)}</div><div style="font-size:11px;color:var(--mid)">${ratingLabel(v)}</div></div>`).join('')}
+      </div>
+    </div>
+
+    ${e.policies ? `<div class="detail-section"><h4>Policies Reviewed</h4><div class="detail-text">${esc(e.policies)}</div></div>` : ''}
+    ${e.expectations ? `<div class="detail-section"><h4>Expectations for Next Period</h4><div class="detail-text">${esc(e.expectations)}</div></div>` : ''}
+    ${e.strengths ? `<div class="detail-section"><h4>Strengths & Highlights</h4><div class="detail-text">${esc(e.strengths)}</div></div>` : ''}
+    ${e.improvements ? `<div class="detail-section"><h4>Areas for Improvement</h4><div class="detail-text">${esc(e.improvements)}</div></div>` : ''}
+    ${e.trainerNotes ? `<div class="detail-section"><h4>Trainer Notes</h4><div class="detail-text">${esc(e.trainerNotes)}</div></div>` : ''}
+
+    <div class="detail-section">
+      <h4>Signatures</h4>
+      <div class="detail-grid">
+        <div class="detail-item"><label>Trainer</label><p>${esc(e.trainerName||'—')}</p></div>
+        <div class="detail-item"><label>Trainer Signature</label><p style="font-style:italic">${esc(e.trainerSig||'—')}</p></div>
+        <div class="detail-item"><label>Team Member Signature</label><p style="font-style:italic">${esc(e.tmSig||'—')}</p></div>
+        <div class="detail-item"><label>Manager</label><p>${esc(e.managerSig||'—')}</p></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('detail-modal').classList.add('open');
+}
+function closeDetailModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+}
+function closeModal(e) {
+  if (e.target.id === 'detail-modal') closeDetailModal();
+}
+
+// ── Helpers
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('screen-login').classList.contains('active')) signIn();
+  if (e.key === 'Escape') closeDetailModal();
+});
+</script>
