@@ -689,6 +689,7 @@ const FIREBASE_CONFIG = {
 
 // Admin email address (gets notified on every submission)
 const ADMIN_EMAIL = "arlo.bedolla@gmail.com";
+const ADMIN_EMAILS = ["arlo.bedolla@gmail.com", "abedolla@pechanga.com"];
 
 // Set false once Firebase is configured
 const SHOW_SETUP = false;
@@ -819,7 +820,7 @@ function showApp(user) {
   const name = user.displayName || user.email.split('@')[0];
   document.getElementById('topbar-name').textContent = name;
 
-  const isAdmin = user.email === ADMIN_EMAIL;
+  const isAdmin = ADMIN_EMAILS.includes(user.email.toLowerCase());
   document.getElementById('topbar-admin-badge').hidden = !isAdmin;
   document.getElementById('tab-row').style.display = isAdmin ? '' : 'none';
 
