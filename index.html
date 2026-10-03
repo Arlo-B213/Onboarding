@@ -931,7 +931,8 @@ function switchTab(tab) {
   document.getElementById('panel-new').hidden = tab !== 'new';
   document.getElementById('panel-admin').hidden = tab !== 'admin';
   document.getElementById('panel-activity').hidden = tab !== 'activity';
-  if (tab === 'activity' && currentIsAdmin) loadActivityFeed();
+  if (tab === 'admin') loadEvals();
+  if (tab === 'activity' && currentIsAdmin) loadEvals().then(loadActivityFeed);
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1148,6 +1149,7 @@ async function submitEvaluation() {
 
   // Saved. The draft is no longer needed; the email is best-effort.
   clearDraft();
+  loadEvals();
   const emailed = await sendEmailNotification(evaluation);
   ok.textContent = emailed
     ? `✓ Evaluation submitted for ${tmName} (${currentPeriod}-Day). A copy has been sent to ${ADMIN_EMAIL}.`
@@ -1293,7 +1295,7 @@ async function loadEvals() {
   try {
     const snap = await db.collection('evaluations').orderBy('submittedAt','desc').limit(200).get();
     allEvals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderEvalTable(allEvals);
+    filterEvals();
   } catch(e) {
     console.error(e);
     document.getElementById('eval-table-body').innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:20px;">Error loading: ${e.message}</td></tr>`;
