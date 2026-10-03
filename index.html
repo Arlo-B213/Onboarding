@@ -599,7 +599,7 @@ body { font-family: 'Inter', system-ui, sans-serif; background: var(--cream); co
 
         <div style="display:flex; justify-content:flex-end; gap:10px; padding-bottom:40px;">
           <button class="btn btn-ghost" onclick="clearForm()">Clear Form</button>
-          <button class="btn btn-primary" onclick="submitEvaluation()">
+          <button class="btn btn-primary" id="submit-btn" onclick="submitEvaluation()">
             <span id="submit-label">Submit Evaluation</span>
           </button>
         </div>
@@ -803,8 +803,14 @@ auth.onAuthStateChanged(user => {
   }
 });
 
-// Default today's date
-document.getElementById('f-eval-date').value = new Date().toISOString().split('T')[0];
+// Today's date in the user's local timezone (toISOString() would give the UTC date,
+// which is "tomorrow" for evening shifts in California)
+function todayLocal() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().split('T')[0];
+}
+document.getElementById('f-eval-date').value = todayLocal();
 
 // ══════════════════════════════════════════════════════════════════════
 //  AUTH
@@ -825,6 +831,7 @@ function showApp(user) {
   document.getElementById('tab-row').style.display = isAdmin ? '' : 'none';
 
   if (isAdmin) loadEvals();
+  restoreDraft();
 }
 
 async function signIn() {
@@ -868,8 +875,11 @@ async function sendReset() {
 }
 function humanAuthError(code) {
   const map = {
+    'auth/invalid-credential': 'Incorrect email or password.',
+    'auth/invalid-login-credentials': 'Incorrect email or password.',
     'auth/wrong-password': 'Incorrect password.',
     'auth/user-not-found': 'No account found with that email.',
+    'auth/user-disabled': 'This account has been disabled. Contact your administrator.',
     'auth/invalid-email': 'Please enter a valid email address.',
     'auth/too-many-requests': 'Too many attempts. Please try again later.',
     'auth/network-request-failed': 'Network error. Check your connection.',
@@ -891,13 +901,26 @@ function switchTab(tab) {
 // ══════════════════════════════════════════════════════════════════════
 //  PERIOD SELECTION
 // ══════════════════════════════════════════════════════════════════════
-function selectPeriod(el) {
+// True if anything period-specific (checklist, skills, ratings) has been filled in
+function hasPeriodData() {
+  const root = document.getElementById('period-sections');
+  return [...root.querySelectorAll('#classes-list input, #skills-table input, #comp-table input')]
+    .some(i => (i.type === 'checkbox' || i.type === 'radio') ? i.checked : i.value.trim() !== '');
+}
+
+function selectPeriod(el, { skipConfirm = false, noScroll = false } = {}) {
+  const next = parseInt(el.dataset.period);
+  if (currentPeriod && next !== currentPeriod && !skipConfirm && hasPeriodData() &&
+      !confirm('Switching periods will clear the checklist, skills and ratings you have entered. Continue?')) {
+    return;
+  }
   document.querySelectorAll('.period-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
-  currentPeriod = parseInt(el.dataset.period);
+  currentPeriod = next;
   renderPeriodSections(currentPeriod);
   document.getElementById('period-sections').hidden = false;
-  setTimeout(() => document.getElementById('period-sections').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+  if (!noScroll) setTimeout(() => document.getElementById('period-sections').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+  saveDraft();
 }
 
 function renderPeriodSections(period) {
@@ -982,22 +1005,44 @@ function updateCheckStyle(id) {
 // ══════════════════════════════════════════════════════════════════════
 //  SUBMIT
 // ══════════════════════════════════════════════════════════════════════
+let submitting = false;
+
 async function submitEvaluation() {
+  if (submitting) return;
   const err = document.getElementById('submit-error');
   const ok = document.getElementById('submit-success');
   const lbl = document.getElementById('submit-label');
+  const btn = document.getElementById('submit-btn');
   err.classList.remove('show'); ok.classList.remove('show');
+  const fail = msg => { err.textContent = msg; err.classList.add('show'); };
 
   // Validate required fields
   const tmName = document.getElementById('f-tm-name').value.trim();
   const outlet = document.getElementById('f-outlet').value.trim();
+  const startDate = document.getElementById('f-start-date').value;
   const evalDate = document.getElementById('f-eval-date').value;
-  if (!tmName) { err.textContent = 'Team Member Name is required.'; err.classList.add('show'); return; }
-  if (!outlet) { err.textContent = 'Outlet is required.'; err.classList.add('show'); return; }
-  if (!currentPeriod) { err.textContent = 'Please select an evaluation period.'; err.classList.add('show'); return; }
-  if (!evalDate) { err.textContent = 'Evaluation date is required.'; err.classList.add('show'); return; }
+  if (!tmName) return fail('Team Member Name is required.');
+  if (!outlet) return fail('Outlet is required.');
+  if (!currentPeriod) return fail('Please select an evaluation period.');
+  if (!evalDate) return fail('Evaluation date is required.');
+  if (startDate && evalDate < startDate) return fail('Evaluation date cannot be before the start date.');
 
   const data = PERIOD_DATA[currentPeriod];
+
+  for (const s of data.skills) {
+    const trained = document.getElementById('skill-trained-'+s.id).value;
+    const witnessed = document.getElementById('skill-witnessed-'+s.id).value;
+    if (trained && witnessed && witnessed < trained) {
+      return fail(`${s.name}: Date Witnessed cannot be before Date Trained.`);
+    }
+  }
+  for (const comp of data.competencies) {
+    if (!document.querySelector(`input[name="comp-${comp.toLowerCase()}"]:checked`)) {
+      return fail(`Please rate ${comp} in the Competency Ratings section.`);
+    }
+  }
+  if (!document.getElementById('f-trainer-name').value.trim()) return fail('Trainer / Evaluator Name is required.');
+  if (!document.getElementById('f-trainer-sig').value.trim()) return fail('Trainer Signature is required.');
 
   // Collect classes
   const classes = {};
@@ -1045,22 +1090,33 @@ async function submitEvaluation() {
     submittedByName: currentUser.displayName || currentUser.email,
   };
 
+  submitting = true;
+  btn.disabled = true;
   lbl.innerHTML = '<span class="spinner"></span> Submitting…';
   try {
     await db.collection('evaluations').add(evaluation);
-    // Send email notification via EmailJS or a cloud function
-    await sendEmailNotification(evaluation);
-    ok.textContent = `✓ Evaluation submitted for ${tmName} (${currentPeriod}-Day). A copy has been sent to ${ADMIN_EMAIL}.`;
-    ok.classList.add('show');
-    lbl.textContent = 'Submit Evaluation';
-    setTimeout(() => clearForm(), 3000);
   } catch(e) {
     err.textContent = 'Submission failed: ' + (e.message || e);
     err.classList.add('show');
     lbl.textContent = 'Submit Evaluation';
+    btn.disabled = false;
+    submitting = false;
+    return;
   }
+
+  // Saved. The draft is no longer needed; the email is best-effort.
+  clearDraft();
+  const emailed = await sendEmailNotification(evaluation);
+  ok.textContent = emailed
+    ? `✓ Evaluation submitted for ${tmName} (${currentPeriod}-Day). A copy has been sent to ${ADMIN_EMAIL}.`
+    : `✓ Evaluation for ${tmName} (${currentPeriod}-Day) was saved, but the email notification to ${ADMIN_EMAIL} failed. It is available in All Evaluations.`;
+  ok.classList.add('show');
+  lbl.textContent = 'Submit Evaluation';
+  // Keep the button locked until the form resets so it can't be submitted twice
+  setTimeout(() => { clearForm(); btn.disabled = false; submitting = false; }, emailed ? 3000 : 6000);
 }
 
+// Returns true if the email was sent, false otherwise (never throws)
 async function sendEmailNotification(ev) {
   try {
     const subject = `PRIDE Eval: ${ev.tmName} — ${ev.period}-Day | ${ev.outlet}`;
@@ -1115,25 +1171,78 @@ async function sendEmailNotification(ev) {
       body,
       to_email: ADMIN_EMAIL,
     });
-    console.log('Email notification sent.');
+    return true;
   } catch(e) {
     console.warn('Email notification failed (non-blocking):', e);
+    return false;
   }
 }
 
 function clearForm() {
-  document.getElementById('f-tm-name').value = '';
-  document.getElementById('f-outlet').value = '';
-  document.getElementById('f-position').value = '';
-  document.getElementById('f-start-date').value = '';
-  document.getElementById('f-eval-date').value = new Date().toISOString().split('T')[0];
+  // Reset every field in the form (header, period-specific and trainer sections)
+  document.querySelectorAll('#panel-new input, #panel-new textarea').forEach(el => {
+    if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+    else el.value = '';
+  });
+  document.querySelectorAll('#classes-list .check-item').forEach(c => c.classList.remove('checked'));
+  document.getElementById('f-eval-date').value = todayLocal();
   document.querySelectorAll('.period-card').forEach(c => c.classList.remove('selected'));
   currentPeriod = null;
   document.getElementById('period-sections').hidden = true;
   document.getElementById('submit-error').classList.remove('show');
   document.getElementById('submit-success').classList.remove('show');
+  clearDraft();
   window.scrollTo({top:0, behavior:'smooth'});
 }
+
+// ══════════════════════════════════════════════════════════════════════
+//  DRAFT AUTOSAVE (localStorage, per user)
+// ══════════════════════════════════════════════════════════════════════
+const draftKey = () => currentUser ? `pride-draft-${currentUser.uid}` : null;
+
+function saveDraft() {
+  const key = draftKey();
+  if (!key || submitting) return;
+  try {
+    const vals = {}, checks = {};
+    document.querySelectorAll('#panel-new input[id], #panel-new textarea[id]').forEach(el => {
+      if (el.type === 'checkbox' || el.type === 'radio') checks[el.id] = el.checked;
+      else vals[el.id] = el.value;
+    });
+    localStorage.setItem(key, JSON.stringify({ period: currentPeriod, vals, checks }));
+  } catch(e) { /* storage unavailable or full — drafts are best-effort */ }
+}
+
+function clearDraft() {
+  const key = draftKey();
+  try { if (key) localStorage.removeItem(key); } catch(e) {}
+}
+
+function restoreDraft() {
+  const key = draftKey();
+  if (!key || currentPeriod) return;
+  let draft;
+  try { draft = JSON.parse(localStorage.getItem(key) || 'null'); } catch(e) { return; }
+  if (!draft) return;
+  if (draft.period) {
+    const card = document.querySelector(`.period-card[data-period="${draft.period}"]`);
+    if (card) selectPeriod(card, { skipConfirm: true, noScroll: true });
+  }
+  Object.entries(draft.vals || {}).forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.value = v; });
+  Object.entries(draft.checks || {}).forEach(([id, c]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.checked = c;
+    if (id.startsWith('class-')) updateCheckStyle(id.slice(6));
+  });
+  saveDraft(); // selectPeriod() saved an empty form before the values were applied
+}
+
+let draftTimer;
+['input', 'change'].forEach(evt => document.getElementById('panel-new').addEventListener(evt, () => {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(saveDraft, 400);
+}));
 
 // ══════════════════════════════════════════════════════════════════════
 //  ADMIN: LOAD & DISPLAY
@@ -1252,7 +1361,10 @@ function esc(s) {
 
 // Keyboard
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.getElementById('screen-login').classList.contains('active')) signIn();
+  if (e.key === 'Enter' && document.getElementById('screen-login').classList.contains('active')) {
+    if (document.getElementById('view-reset').style.display === 'none') signIn();
+    else sendReset();
+  }
   if (e.key === 'Escape') closeDetailModal();
 });
 </script>

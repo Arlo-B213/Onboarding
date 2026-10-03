@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Keep in sync with ADMIN_EMAILS in index.html
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email.lower() in [
+          'arlo.bedolla@gmail.com',
+          'abedolla@pechanga.com'
+        ];
+    }
+
+    match /evaluations/{evalId} {
+      // Only admins can read submitted evaluations
+      allow read: if isAdmin();
+
+      // Any signed-in manager can submit, but only as themselves,
+      // with a server-set timestamp
+      allow create: if request.auth != null
+        && request.resource.data.submittedBy == request.auth.token.email
+        && request.resource.data.submittedAt == request.time;
+
+      // Submitted evaluations are immutable
+      allow update, delete: if false;
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
