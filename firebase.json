@@ -21,6 +21,10 @@
       "tests/**",
       "docs/**",
       "**/.*",
+      ".git/**",
+      ".superpowers/**",
+      ".claude-flow/**",
+      ".firebase/**",
       "firestore-debug.log",
       "**/*.log",
       "**/node_modules/**"
