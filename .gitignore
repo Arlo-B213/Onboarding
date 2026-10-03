@@ -3,3 +3,5 @@ node_modules/
 
 .firebase/
 .claude-flow/
+
+firestore-debug.log
