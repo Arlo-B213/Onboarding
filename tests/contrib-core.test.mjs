@@ -60,6 +60,12 @@ describe('builders', () => {
     const r = P.buildAdd({ user: { email: 'z@x.com' }, contributionId: 'c', note: 'n', ratings: null, ts: TS });
     assert.equal(r.contribution.authorName, 'z@x.com');
   });
+  it('truncates a long display name to the 200-char rules cap', () => {
+    const long = { email: 'a@pechanga.com', displayName: 'x'.repeat(300) };
+    const r = P.buildAdd({ user: long, contributionId: 'c', note: 'n', ratings: null, ts: TS });
+    assert.equal(r.contribution.authorName.length, 200);
+    assert.equal(r.activity.byName.length, 200);
+  });
   it('buildEdit bumps rev and records before/after', () => {
     const existing = { id: 'c1', rev: 1, note: 'old', ratings: null };
     const r = P.buildEdit({ user, existing, note: 'new', ratings: null, ts: TS });

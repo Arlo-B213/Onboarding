@@ -1298,7 +1298,7 @@ async function loadEvals() {
     filterEvals();
   } catch(e) {
     console.error(e);
-    document.getElementById('eval-table-body').innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:20px;">Error loading: ${e.message}</td></tr>`;
+    document.getElementById('eval-table-body').innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:20px;">Error loading: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -1327,15 +1327,15 @@ function renderEvalTable(evals) {
     return;
   }
   tbody.innerHTML = evals.map(e => {
-    const date = e.evalDate || '—';
+    const date = esc(e.evalDate || '—');
     const sub = e.submittedAt?.toDate ? e.submittedAt.toDate().toLocaleDateString() : '—';
     return `<tr>
       <td><strong>${esc(e.tmName)}</strong><br><small style="color:var(--mid)">${esc(e.position||'')}</small></td>
       <td>${esc(e.outlet||'—')}</td>
-      <td><span class="period-pill">${e.period}-Day</span></td>
+      <td><span class="period-pill">${esc(e.period)}-Day</span></td>
       <td>${date}</td>
-      <td><small>${esc(e.submittedByName||e.submittedBy||'—')}</small><br><small style="color:var(--mid)">${sub}</small></td>
-      <td><button class="btn btn-outline btn-sm" onclick="openDetail('${e.id}')">View</button></td>
+      <td><small>${esc(e.submittedByName||e.submittedBy||'—')}</small><br><small style="color:var(--mid)">${esc(sub)}</small></td>
+      <td><button class="btn btn-outline btn-sm" data-action="view-eval" data-id="${esc(e.id)}">View</button></td>
     </tr>`;
   }).join('');
 }
@@ -1355,8 +1355,8 @@ function openDetail(id) {
     <div class="detail-grid">
       <div class="detail-item"><label>Outlet</label><p>${esc(e.outlet||'—')}</p></div>
       <div class="detail-item"><label>Position</label><p>${esc(e.position||'—')}</p></div>
-      <div class="detail-item"><label>Eval Date</label><p>${e.evalDate||'—'}</p></div>
-      <div class="detail-item"><label>Start Date</label><p>${e.startDate||'—'}</p></div>
+      <div class="detail-item"><label>Eval Date</label><p>${esc(e.evalDate||'—')}</p></div>
+      <div class="detail-item"><label>Start Date</label><p>${esc(e.startDate||'—')}</p></div>
       <div class="detail-item"><label>Submitted By</label><p>${esc(e.submittedByName||e.submittedBy||'—')}</p></div>
       <div class="detail-item"><label>Classes Completed</label><p>${classDone} / ${classTotal}</p></div>
     </div>
@@ -1369,7 +1369,7 @@ function openDetail(id) {
     <div class="detail-section">
       <h4>Competency Ratings</h4>
       <div class="detail-ratings">
-        ${comps.map(([k,v])=>`<div class="detail-rating-box"><div class="dr-val">${v||'—'}</div><div class="dr-lbl">${esc(k)}</div><div style="font-size:11px;color:var(--mid)">${ratingLabel(v)}</div></div>`).join('')}
+        ${comps.map(([k,v])=>`<div class="detail-rating-box"><div class="dr-val">${esc(v||'—')}</div><div class="dr-lbl">${esc(k)}</div><div style="font-size:11px;color:var(--mid)">${ratingLabel(v)}</div></div>`).join('')}
       </div>
     </div>
 
@@ -1403,8 +1403,13 @@ function closeModal(e) {
 
 // ── Helpers
 function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+
+document.getElementById('eval-table-body').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action="view-eval"]');
+  if (btn) openDetail(btn.dataset.id);
+});
 
 // Keyboard
 document.addEventListener('keydown', e => {

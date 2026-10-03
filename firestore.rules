@@ -121,6 +121,7 @@ service cloud.firestore {
           && resource.data.retracted == false
           && validContribution(request.resource.data)
           && request.resource.data.authorEmail == resource.data.authorEmail
+          && request.resource.data.authorName == resource.data.authorName
           && request.resource.data.createdAt == resource.data.createdAt
           && request.resource.data.rev == resource.data.rev + 1
           && request.resource.data.updatedAt == request.time

@@ -4,7 +4,7 @@ const PrideContrib = (() => {
   const COMPETENCIES = ['Pride', 'Passion', 'Professionalism'];
   const MAX_NOTE = 5000;
 
-  const actorName = user => user.displayName || user.email;
+  const actorName = user => (user.displayName || user.email).slice(0, 200);
 
   function escapeHtml(s) {
     return String(s == null ? '' : s)

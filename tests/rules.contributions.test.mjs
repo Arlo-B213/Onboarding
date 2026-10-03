@@ -119,6 +119,11 @@ describe('contributions: edit', () => {
       before: FIRST, after: SECOND, contribOver: { authorEmail: LEADER_B },
     }));
   });
+  it('cannot change authorName', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_A), {
+      before: FIRST, after: SECOND, contribOver: { authorName: 'Someone Else' },
+    }));
+  });
   it('fails when an edit is logged as "retracted"', async () => {
     await assertFails(changeContribution(dbAs(env, LEADER_A), {
       before: FIRST, after: SECOND, logOver: { type: 'retracted' },
