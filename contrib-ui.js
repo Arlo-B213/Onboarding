@@ -186,3 +186,46 @@ function onContribClick(e) {
 }
 
 document.getElementById('modal-body').addEventListener('click', onContribClick);
+
+// ── admin Activity feed ────────────────────────────────────────────────
+
+async function loadActivityFeed() {
+  const body = document.getElementById('activity-table-body');
+  body.innerHTML = '<tr><td colspan="5"><div class="empty-state"><p>Loading activity…</p></div></td></tr>';
+  try {
+    const snap = await db.collectionGroup('activity').orderBy('at', 'desc').limit(200).get();
+    renderActivityFeed(snap.docs.map(d => ({ id: d.id, evalId: d.ref.parent.parent.id, ...d.data() })));
+  } catch (e) {
+    console.error(e);
+    body.innerHTML = `<tr><td colspan="5" style="color:var(--danger);padding:20px;">Error loading activity: ${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+function renderActivityFeed(rows) {
+  const body = document.getElementById('activity-table-body');
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="icon">📋</div><p>No activity logged yet.</p></div></td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(r => {
+    const ev = allEvals.find(x => x.id === r.evalId);
+    const desc = PrideContrib.describeActivity(r);
+    // The evaluation may be older than the 200 loaded; then show its id and no View button
+    const evalCell = ev
+      ? `<strong>${escHtml(ev.tmName)}</strong><br><small>${escHtml(ev.period)}-Day · ${escHtml(ev.outlet || '')}</small><br>
+         <button class="btn btn-outline btn-sm" data-action="open-eval" data-id="${escHtml(r.evalId)}">View</button>`
+      : `<small>${escHtml(r.evalId)}</small>`;
+    return `<tr>
+      <td>${fmtTime(r.at)}</td>
+      <td>${escHtml(r.byName || r.byEmail)}</td>
+      <td>${escHtml(desc.label)}</td>
+      <td>${evalCell}</td>
+      <td>${desc.lines.map(l => escHtml(l)).join('<br>')}</td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('activity-table-body').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action="open-eval"]');
+  if (btn) openDetail(btn.dataset.id);
+});
