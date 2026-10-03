@@ -23,6 +23,32 @@ service cloud.firestore {
       return /databases/$(database)/documents/evaluations/$(evalId)/activity/$(aid);
     }
 
+    // ── contributions ──
+    function validRating(v) { return v == null || v in [1, 2, 3]; }
+    function validRatings(r) {
+      return r == null || (r is map
+        && r.keys().hasOnly(['Pride', 'Passion', 'Professionalism'])
+        && validRating(r.get('Pride', null))
+        && validRating(r.get('Passion', null))
+        && validRating(r.get('Professionalism', null)));
+    }
+    function hasAnyRating(r) {
+      return r != null && (r.get('Pride', null) != null
+        || r.get('Passion', null) != null
+        || r.get('Professionalism', null) != null);
+    }
+    function validContribution(d) {
+      return d.keys().hasAll(['authorEmail', 'authorName', 'note', 'ratings', 'createdAt', 'updatedAt', 'rev', 'retracted'])
+        && d.keys().hasOnly(['authorEmail', 'authorName', 'note', 'ratings', 'createdAt', 'updatedAt', 'rev', 'retracted'])
+        && d.authorEmail is string
+        && d.authorName is string && d.authorName.size() <= 200
+        && d.note is string && d.note.size() <= 5000
+        && validRatings(d.ratings)
+        && (d.note.size() > 0 || hasAnyRating(d.ratings))
+        && d.rev is int
+        && d.retracted is bool;
+    }
+
     // ── activity log entries ──
     function validActivity(d) {
       return d.keys().hasAll(['type', 'contributionId', 'rev', 'byEmail', 'byName', 'at', 'before', 'after'])
@@ -42,6 +68,32 @@ service cloud.firestore {
         && getAfter(evalPath(evalId)).data.submittedBy == d.byEmail;
     }
 
+    // Log entry for an added / edited / retracted contribution. It must describe a
+    // change that really happens in the same batch.
+    function changeEntry(evalId, aid, d) {
+      return d.type in ['added', 'edited', 'retracted']
+        && d.contributionId is string && d.rev is int
+        && aid == d.contributionId + '_' + string(d.rev)
+        && existsAfter(contribPath(evalId, d.contributionId))
+        && getAfter(contribPath(evalId, d.contributionId)).data.rev == d.rev
+        && getAfter(contribPath(evalId, d.contributionId)).data.authorEmail == d.byEmail
+        && getAfter(contribPath(evalId, d.contributionId)).data.retracted == (d.type == 'retracted')
+        && d.after is map
+        && d.after.keys().hasAll(['note', 'ratings'])
+        && d.after.keys().hasOnly(['note', 'ratings'])
+        && d.after.note == getAfter(contribPath(evalId, d.contributionId)).data.note
+        && d.after.ratings == getAfter(contribPath(evalId, d.contributionId)).data.ratings
+        && (d.type == 'added'
+          ? (d.rev == 1 && d.before == null && !exists(contribPath(evalId, d.contributionId)))
+          : (d.rev >= 2 && d.before is map
+             && d.before.keys().hasAll(['note', 'ratings'])
+             && d.before.keys().hasOnly(['note', 'ratings'])
+             && exists(contribPath(evalId, d.contributionId))
+             && get(contribPath(evalId, d.contributionId)).data.rev == d.rev - 1
+             && d.before.note == get(contribPath(evalId, d.contributionId)).data.note
+             && d.before.ratings == get(contribPath(evalId, d.contributionId)).data.ratings));
+    }
+
     // ── evaluations ──
     match /evaluations/{evalId} {
       allow read: if signedIn();
@@ -52,10 +104,26 @@ service cloud.firestore {
         && getAfter(activityPath(evalId, 'submitted')).data.type == 'submitted';
       allow update, delete: if false;
 
+      match /contributions/{cid} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && exists(evalPath(evalId))
+          && validContribution(request.resource.data)
+          && request.resource.data.authorEmail == request.auth.token.email
+          && request.resource.data.rev == 1
+          && request.resource.data.retracted == false
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time
+          && existsAfter(activityPath(evalId, cid + '_1'))
+          && getAfter(activityPath(evalId, cid + '_1')).data.type == 'added';
+        allow update, delete: if false;   // update is added in Task 4
+      }
+
       match /activity/{activityId} {
         allow create: if signedIn()
           && validActivity(request.resource.data)
-          && submittedEntry(evalId, activityId, request.resource.data);
+          && (submittedEntry(evalId, activityId, request.resource.data)
+              || changeEntry(evalId, activityId, request.resource.data));
         allow update, delete: if false;
       }
     }
