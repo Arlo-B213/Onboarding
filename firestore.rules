@@ -116,7 +116,21 @@ service cloud.firestore {
           && request.resource.data.updatedAt == request.time
           && existsAfter(activityPath(evalId, cid + '_1'))
           && getAfter(activityPath(evalId, cid + '_1')).data.type == 'added';
-        allow update, delete: if false;   // update is added in Task 4
+        allow update: if signedIn()
+          && resource.data.authorEmail == request.auth.token.email
+          && resource.data.retracted == false
+          && validContribution(request.resource.data)
+          && request.resource.data.authorEmail == resource.data.authorEmail
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.rev == resource.data.rev + 1
+          && request.resource.data.updatedAt == request.time
+          && (!request.resource.data.retracted
+              || (request.resource.data.note == resource.data.note
+                  && request.resource.data.ratings == resource.data.ratings))
+          && existsAfter(activityPath(evalId, cid + '_' + string(request.resource.data.rev)))
+          && getAfter(activityPath(evalId, cid + '_' + string(request.resource.data.rev))).data.type
+               == (request.resource.data.retracted ? 'retracted' : 'edited');
+        allow delete: if false;
       }
 
       match /activity/{activityId} {

@@ -1,7 +1,7 @@
 import { describe, it, before, after, beforeEach } from 'node:test';
 import { doc, getDoc } from 'firebase/firestore';
 import {
-  createEnv, dbAs, anonDb, seedEvaluation, seedContribution, addContribution,
+  createEnv, dbAs, anonDb, seedEvaluation, seedContribution, addContribution, changeContribution,
   assertSucceeds, assertFails, LEADER_A, LEADER_B,
 } from './helpers.mjs';
 
@@ -83,5 +83,77 @@ describe('contributions: create', () => {
   it('rejects an unknown rating key', async () => {
     const ratings = { Pride: 3, Passion: null, Professionalism: null, Bonus: 1 };
     await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, ratings }));
+  });
+});
+
+const FIRST = { note: 'first', ratings: null };
+const SECOND = { note: 'second', ratings: { Pride: 2, Passion: null, Professionalism: null } };
+
+describe('contributions: edit', () => {
+  beforeEach(async () => { await seedContribution(env, { by: LEADER_A, note: 'first' }); });
+
+  it('the author can edit with a matching log entry', async () => {
+    await assertSucceeds(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: SECOND }));
+  });
+  it('another leader cannot edit it', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_B), { by: LEADER_B, before: FIRST, after: SECOND }));
+  });
+  it('fails without the log entry', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: SECOND, withLog: false }));
+  });
+  it('fails when rev skips ahead', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_A), { rev: 3, before: FIRST, after: SECOND }));
+  });
+  it('fails when the log "before" is wrong', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_A), {
+      before: { note: 'not what it was', ratings: null }, after: SECOND,
+    }));
+  });
+  it('fails when the log "after" does not match the new content', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_A), {
+      before: FIRST, after: SECOND, logOver: { after: { note: 'lie', ratings: null } },
+    }));
+  });
+  it('cannot change authorEmail', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_A), {
+      before: FIRST, after: SECOND, contribOver: { authorEmail: LEADER_B },
+    }));
+  });
+  it('cannot clear both note and ratings', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: { note: '', ratings: null } }));
+  });
+
+  // Review Focus 3: same user, two tabs — the second write has a stale rev
+  it('rejects a second edit that reuses the same rev', async () => {
+    await assertSucceeds(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: SECOND }));
+    await assertFails(changeContribution(dbAs(env, LEADER_A), {
+      rev: 2, before: FIRST, after: { note: 'third', ratings: null },
+    }));
+  });
+});
+
+describe('contributions: retract', () => {
+  beforeEach(async () => { await seedContribution(env, { by: LEADER_A, note: 'first' }); });
+
+  it('the author can retract with a matching log entry', async () => {
+    await assertSucceeds(changeContribution(dbAs(env, LEADER_A), { retract: true, before: FIRST, after: FIRST }));
+  });
+  it('another leader cannot retract it', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_B), { by: LEADER_B, retract: true, before: FIRST, after: FIRST }));
+  });
+  it('a retract cannot also change the note', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_A), {
+      retract: true, before: FIRST, after: { note: 'sneaky', ratings: null },
+    }));
+  });
+
+  // Review Focus 2: edit after retract
+  it('cannot be edited after it was retracted', async () => {
+    await assertSucceeds(changeContribution(dbAs(env, LEADER_A), { retract: true, before: FIRST, after: FIRST }));
+    await assertFails(changeContribution(dbAs(env, LEADER_A), { rev: 3, before: FIRST, after: SECOND }));
+  });
+  it('cannot be un-retracted', async () => {
+    await assertSucceeds(changeContribution(dbAs(env, LEADER_A), { retract: true, before: FIRST, after: FIRST }));
+    await assertFails(changeContribution(dbAs(env, LEADER_A), { rev: 3, retract: false, before: FIRST, after: FIRST }));
   });
 });
