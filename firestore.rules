@@ -2,6 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── helpers ──
     // Keep in sync with ADMIN_EMAILS in index.html
     function isAdmin() {
       return request.auth != null
@@ -10,19 +11,53 @@ service cloud.firestore {
           'abedolla@pechanga.com'
         ];
     }
+    function signedIn() { return request.auth != null; }
 
+    function evalPath(evalId) {
+      return /databases/$(database)/documents/evaluations/$(evalId);
+    }
+    function contribPath(evalId, cid) {
+      return /databases/$(database)/documents/evaluations/$(evalId)/contributions/$(cid);
+    }
+    function activityPath(evalId, aid) {
+      return /databases/$(database)/documents/evaluations/$(evalId)/activity/$(aid);
+    }
+
+    // ── activity log entries ──
+    function validActivity(d) {
+      return d.keys().hasAll(['type', 'contributionId', 'rev', 'byEmail', 'byName', 'at', 'before', 'after'])
+        && d.keys().hasOnly(['type', 'contributionId', 'rev', 'byEmail', 'byName', 'at', 'before', 'after'])
+        && d.type in ['submitted', 'added', 'edited', 'retracted']
+        && d.byEmail == request.auth.token.email
+        && d.byName is string && d.byName.size() <= 200
+        && d.at == request.time;
+    }
+
+    function submittedEntry(evalId, aid, d) {
+      return d.type == 'submitted'
+        && aid == 'submitted'
+        && d.contributionId == null && d.rev == null
+        && d.before == null && d.after == null
+        && existsAfter(evalPath(evalId))
+        && getAfter(evalPath(evalId)).data.submittedBy == d.byEmail;
+    }
+
+    // ── evaluations ──
     match /evaluations/{evalId} {
-      // Only admins can read submitted evaluations
-      allow read: if isAdmin();
-
-      // Any signed-in manager can submit, but only as themselves,
-      // with a server-set timestamp
-      allow create: if request.auth != null
+      allow read: if signedIn();
+      allow create: if signedIn()
         && request.resource.data.submittedBy == request.auth.token.email
-        && request.resource.data.submittedAt == request.time;
-
-      // Submitted evaluations are immutable
+        && request.resource.data.submittedAt == request.time
+        && existsAfter(activityPath(evalId, 'submitted'))
+        && getAfter(activityPath(evalId, 'submitted')).data.type == 'submitted';
       allow update, delete: if false;
+
+      match /activity/{activityId} {
+        allow create: if signedIn()
+          && validActivity(request.resource.data)
+          && submittedEntry(evalId, activityId, request.resource.data);
+        allow update, delete: if false;
+      }
     }
 
     // Deny everything else
