@@ -119,6 +119,11 @@ describe('contributions: edit', () => {
       before: FIRST, after: SECOND, contribOver: { authorEmail: LEADER_B },
     }));
   });
+  it('fails when an edit is logged as "retracted"', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_A), {
+      before: FIRST, after: SECOND, logOver: { type: 'retracted' },
+    }));
+  });
   it('cannot clear both note and ratings', async () => {
     await assertFails(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: { note: '', ratings: null } }));
   });
@@ -140,6 +145,11 @@ describe('contributions: retract', () => {
   });
   it('another leader cannot retract it', async () => {
     await assertFails(changeContribution(dbAs(env, LEADER_B), { by: LEADER_B, retract: true, before: FIRST, after: FIRST }));
+  });
+  it('fails when a retract is logged as "edited"', async () => {
+    await assertFails(changeContribution(dbAs(env, LEADER_A), {
+      retract: true, before: FIRST, after: FIRST, logOver: { type: 'edited' },
+    }));
   });
   it('a retract cannot also change the note', async () => {
     await assertFails(changeContribution(dbAs(env, LEADER_A), {
