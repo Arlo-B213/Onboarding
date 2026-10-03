@@ -1,0 +1,14 @@
+{
+  "name": "pride-training-log",
+  "private": true,
+  "scripts": {
+    "test": "npm run test:core && npm run test:rules",
+    "test:core": "node --test tests/contrib-core.test.mjs",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-pride \"node --test --test-concurrency=1 tests/rules.*.test.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "^12.19.0",
+    "firebase-tools": "^15.32.1"
+  }
+}
