@@ -134,12 +134,18 @@ service cloud.firestore {
       }
 
       match /activity/{activityId} {
+        allow read: if isAdmin();
         allow create: if signedIn()
           && validActivity(request.resource.data)
           && (submittedEntry(evalId, activityId, request.resource.data)
               || changeEntry(evalId, activityId, request.resource.data));
         allow update, delete: if false;
       }
+    }
+
+    // Admin-only collection-group read for the global Activity feed
+    match /{path=**}/activity/{activityId} {
+      allow read: if isAdmin();
     }
 
     // Deny everything else
