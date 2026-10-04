@@ -1,6 +1,7 @@
 /* Visual and sound effects for the PRIDE Training Log. Loaded as the global `PrideFx`.
-   - Sounds are synthesized with the Web Audio API (no audio files). They only ever play after a
-     user click (sign in, submit, tab, forgot password), which is what browsers require.
+   - The only sound is a swoosh when the login card slides to Forgot password and back. It is
+     synthesized with the Web Audio API (no audio files) and only ever plays after a click, which is
+     what browsers require.
    - Everything visual is skipped when the device asks for reduced motion.
    - The mute choice is remembered in localStorage. */
 const PrideFx = (() => {
@@ -22,26 +23,6 @@ const PrideFx = (() => {
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
-  }
-
-  // A soft bell: a fundamental plus a few inharmonic partials, quick attack, long decay
-  function bell(freq, when, vol, decay) {
-    const c = audio();
-    if (!c) return;
-    const t = c.currentTime + when;
-    [[1, 1], [2.01, 0.42], [2.76, 0.24], [4.07, 0.1]].forEach(([ratio, level]) => {
-      const osc = c.createOscillator(), amp = c.createGain();
-      const life = decay / Math.sqrt(ratio);
-      osc.type = 'sine';
-      osc.frequency.value = freq * ratio;
-      amp.gain.setValueAtTime(0.0001, t);
-      amp.gain.exponentialRampToValueAtTime(vol * level, t + 0.012);
-      amp.gain.exponentialRampToValueAtTime(0.0001, t + life);
-      osc.connect(amp);
-      amp.connect(master);
-      osc.start(t);
-      osc.stop(t + life + 0.05);
-    });
   }
 
   // Filtered noise sweeping up (forward) or down (back)
@@ -69,16 +50,8 @@ const PrideFx = (() => {
     src.stop(t + 0.5);
   }
 
+  // The swoosh is the only sound in the app
   const SOUNDS = {
-    // rising C major arpeggio, last note rings
-    login: () => [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => bell(f, i * 0.11, 0.09, i === 3 ? 1.8 : 1.1)),
-    // two warm notes, then a little sparkle
-    submit: () => {
-      bell(783.99, 0, 0.09, 1.2);
-      bell(1174.66, 0.12, 0.09, 1.6);
-      [2093, 2637, 3136].forEach((f, i) => bell(f, 0.26 + i * 0.07, 0.025, 0.5));
-    },
-    tick: () => bell(1568, 0, 0.03, 0.18),
     slideForward: () => swoosh(true),
     slideBack: () => swoosh(false),
   };
@@ -99,7 +72,6 @@ const PrideFx = (() => {
     muted = !muted;
     try { localStorage.setItem('pride-muted', muted ? '1' : '0'); } catch (e) { /* ignore */ }
     syncMute();
-    play('tick');
   }
 
   // ── theme ────────────────────────────────────────────────────────────
@@ -122,7 +94,6 @@ const PrideFx = (() => {
   // with a plain colour fade where that is not supported.
   function toggleTheme(ev) {
     const next = currentTheme() === 'light' ? 'dark' : 'light';
-    play('tick');
     if (reduced()) { applyTheme(next); return; }
     const root = document.documentElement;
     const btn = ev && ev.currentTarget;
@@ -153,9 +124,8 @@ const PrideFx = (() => {
   function disarmLogin() { armed = false; }
   function consumeLogin() { const was = armed; armed = false; return was; }
 
-  // Chime, gold bloom, login card lifts away; `swap` then shows the app, which glides in.
+  // Gold bloom, login card lifts away; `swap` then shows the app, which glides in.
   function loginTransition(swap) {
-    play('login');
     if (reduced()) { swap(); return; }
     const card = document.querySelector('#screen-login .login-card');
     const curtain = document.getElementById('fx-curtain');
@@ -198,7 +168,6 @@ const PrideFx = (() => {
     }
   }
   function submitSuccess(button) {
-    play('submit');
     burst(button);
   }
 
