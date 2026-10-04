@@ -28,7 +28,7 @@ service cloud.firestore {
     // before sections existed have none and count as 'general'.
     // 'skill:<id>' is a note about one soft skill (lowercase letters and underscores only).
     function validSection(v) {
-      return v in ['general', 'info', 'classes', 'soft_skills', 'competencies', 'policies', 'expectations', 'observations', 'signatures']
+      return v in ['general', 'info', 'soft_skills', 'competencies', 'policies', 'expectations', 'observations', 'signatures']
         || (v is string && v.matches('skill:[a-z_]{1,60}'));
     }
     function validRating(v) { return v == null || v in [1, 2, 3]; }

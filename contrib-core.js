@@ -9,7 +9,6 @@ const PrideContrib = (() => {
   const GENERAL = 'general';
   const SECTIONS = [
     { id: 'info', label: 'Team Member Information' },
-    { id: 'classes', label: 'Classes / Training Modules' },
     { id: 'soft_skills', label: 'Soft Skills' },
     { id: 'competencies', label: 'Competency Ratings' },
     { id: 'policies', label: 'Policies Reviewed' },

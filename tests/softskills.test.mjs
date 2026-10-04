@@ -150,3 +150,45 @@ describe('formatting', () => {
     assert.deepEqual(S.emailLines(undefined), ['(none recorded)']);
   });
 });
+
+describe('competency rating comments (3 and 1 must be explained)', () => {
+  it('only a 3 or a 1 needs a comment', () => {
+    assert.equal(S.needsComment(3), true);
+    assert.equal(S.needsComment(1), true);
+    assert.equal(S.needsComment('3'), true);
+    assert.equal(S.needsComment(2), false);
+    assert.equal(S.needsComment(null), false);
+    assert.equal(S.needsComment(''), false);
+    assert.equal(S.needsComment(undefined), false);
+  });
+  it('asks a question that fits the rating', () => {
+    assert.match(S.commentLabel(3), /exceed/i);
+    assert.match(S.commentLabel(1), /improv/i);
+    assert.equal(S.commentLabel(2), '');
+  });
+  it('lists competencies that need a comment but have none, ignoring blanks', () => {
+    const ratings = { Pride: 3, Passion: 2, Professionalism: 1 };
+    assert.deepEqual(S.missingCompetencyComments(ratings, { Pride: '   ', Professionalism: 'Late twice' }), [{ name: 'Pride', rating: 3 }]);
+    assert.deepEqual(S.missingCompetencyComments(ratings, { Pride: 'Went above and beyond', Professionalism: 'Late twice' }), []);
+    assert.deepEqual(S.missingCompetencyComments(ratings, undefined).map(m => m.name), ['Pride', 'Professionalism']);
+  });
+  it('does not ask for a comment on a 2 or an unrated competency', () => {
+    assert.deepEqual(S.missingCompetencyComments({ Pride: 2, Passion: null }, {}), []);
+  });
+  it('keeps only trimmed comments that go with a 3 or a 1', () => {
+    const kept = S.cleanCompetencyComments({ Pride: 3, Passion: 2, Professionalism: 1 }, { Pride: '  Great  ', Passion: 'stale text', Professionalism: 'Late' });
+    assert.deepEqual(kept, { Pride: 'Great', Professionalism: 'Late' });
+  });
+  it('builds the email lines with the comment after the rating', () => {
+    const lines = S.competencyLines({ Pride: 3, Passion: 2, Professionalism: null }, { Pride: 'Led the whole shift' });
+    assert.deepEqual(lines, [
+      'Pride: 3 (Exceeds expectations) — Led the whole shift',
+      'Passion: 2 (Meets expectations)',
+      'Professionalism: Not rated',
+    ]);
+  });
+  it('copes with older evaluations that have no competency comments', () => {
+    assert.deepEqual(S.competencyLines({ Pride: 1 }, undefined), ['Pride: 1 (Needs improvement)']);
+    assert.deepEqual(S.competencyLines(undefined, undefined), ['(none recorded)']);
+  });
+});

@@ -136,7 +136,44 @@ const PrideSkills = (() => {
     return out;
   }
 
-  return { SOFT_SKILLS, LEADERSHIP_SKILLS, POSITIONS, skillsFor, roleLevel, areaFor, positionsByLevel,
+  // ── competency rating comments ──
+  // The three competencies are rated 3 (Exceeds), 2 (Meets) or 1 (Needs improvement). A 3 or a 1 stands
+  // out from the norm, so the evaluator has to say why.
+  const RATING_WORDS = { 3: 'Exceeds expectations', 2: 'Meets expectations', 1: 'Needs improvement' };
+  const needsComment = rating => Number(rating) === 3 || Number(rating) === 1;
+  const commentLabel = rating => (Number(rating) === 3 ? 'Why does this exceed expectations?'
+    : Number(rating) === 1 ? 'Why does this need improvement?' : '');
+
+  // [{ name, rating }] for every 3 or 1 that has no comment yet
+  function missingCompetencyComments(competencies, comments) {
+    return Object.entries(competencies || {})
+      .filter(([name, rating]) => needsComment(rating) && !String((comments || {})[name] || '').trim())
+      .map(([name, rating]) => ({ name, rating: Number(rating) }));
+  }
+
+  // The comments worth saving: trimmed, and only those that go with a 3 or a 1
+  function cleanCompetencyComments(competencies, comments) {
+    const out = {};
+    Object.entries(competencies || {}).forEach(([name, rating]) => {
+      const text = String((comments || {})[name] || '').trim();
+      if (needsComment(rating) && text) out[name] = text;
+    });
+    return out;
+  }
+
+  // Plain-text lines for the notification email
+  function competencyLines(competencies, comments) {
+    const entries = Object.entries(competencies || {});
+    if (!entries.length) return ['(none recorded)'];
+    return entries.map(([name, rating]) => {
+      const base = rating ? `${name}: ${rating} (${RATING_WORDS[rating]})` : `${name}: Not rated`;
+      const why = String((comments || {})[name] || '').trim();
+      return why ? `${base} — ${why}` : base;
+    });
+  }
+
+  return { SOFT_SKILLS, LEADERSHIP_SKILLS, POSITIONS, RATING_WORDS, needsComment, commentLabel,
+           missingCompetencyComments, cleanCompetencyComments, competencyLines, skillsFor, roleLevel, areaFor, positionsByLevel,
            missingCritical, flaggedSkills, scaleLabel, emailLines };
 })();
 

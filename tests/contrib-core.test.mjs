@@ -115,7 +115,7 @@ describe('describeActivity', () => {
 describe('sections', () => {
   const ids = P.SECTIONS.map(x => x.id);
   it('lists the evaluation sections that can take notes', () => {
-    assert.deepEqual(ids, ['info', 'classes', 'soft_skills', 'competencies', 'policies', 'expectations', 'observations', 'signatures']);
+    assert.deepEqual(ids, ['info', 'soft_skills', 'competencies', 'policies', 'expectations', 'observations', 'signatures']);
   });
   it('labels sections and falls back to General', () => {
     assert.equal(P.sectionLabel('soft_skills'), 'Soft Skills');
@@ -124,11 +124,14 @@ describe('sections', () => {
     assert.equal(P.sectionLabel('nope'), 'General');
   });
   it('buildAdd stores the section on the note and on its log entry, as a text-only note', () => {
-    const r = P.buildAdd({ user, contributionId: 'c2', note: ' Great ', ratings: { Pride: '3' }, section: 'classes', ts: TS });
-    assert.equal(r.contribution.section, 'classes');
-    assert.equal(r.activity.section, 'classes');
+    const r = P.buildAdd({ user, contributionId: 'c2', note: ' Great ', ratings: { Pride: '3' }, section: 'info', ts: TS });
+    assert.equal(r.contribution.section, 'info');
+    assert.equal(r.activity.section, 'info');
     assert.equal(r.contribution.ratings, null, 'section notes never carry ratings');
     assert.deepEqual(r.activity.after, { note: 'Great', ratings: null });
+  });
+  it('the removed classes section now falls back to general', () => {
+    assert.equal(P.normalizeSection('classes'), 'general');
   });
   it('an unknown section is stored as general', () => {
     const r = P.buildAdd({ user, contributionId: 'c3', note: 'x', ratings: null, section: 'bogus', ts: TS });
