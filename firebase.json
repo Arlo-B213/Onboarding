@@ -21,6 +21,7 @@
       "tests/**",
       "docs/**",
       "scripts/**",
+      "dev-login.js",
       "**/.*",
       ".git/**",
       ".superpowers/**",
