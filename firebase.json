@@ -35,6 +35,7 @@
       ".superpowers/**",
       ".claude-flow/**",
       ".firebase/**",
+      ".playwright-mcp/**",
       "firestore-debug.log",
       "**/*.log",
       "**/node_modules/**"

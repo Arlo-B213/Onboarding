@@ -625,6 +625,84 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 .comp-comment-head { font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--gold-hi); }
 .comp-comment-text { margin-top: 4px; font-size: 13px; color: var(--text-2); white-space: pre-wrap; }
 
+/* ══ MOBILE ══ phones: tighter spacing, tables become cards, a roomier modal and form actions */
+.rating-legend { display: grid; gap: 4px; margin-bottom: 14px; font-size: 12px; color: var(--mid); }
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; padding-bottom: 40px; }
+.period-pill { white-space: nowrap; }
+.soft-eg { margin: 2px 0 0; }
+.soft-row .rating-group { margin-top: 10px; }
+.comp-why textarea { min-height: 76px; }
+
+@media (max-width: 640px) {
+  /* each table row becomes a card, each cell a "label  value" line */
+  .eval-table thead { display: none; }
+  .eval-table, .eval-table tbody, .eval-table tr, .eval-table td { display: block; width: 100%; }
+  .eval-table tr { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .eval-table tr:last-child { border-bottom: 0; }
+  .eval-table tr:hover { background: var(--gold-soft); }
+  .eval-table tr:hover td { background: transparent; }
+  .eval-table td { padding: 4px 0; border: 0; }
+  .eval-table td[data-label] { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; text-align: right; }
+  .eval-table td[data-label]::before {
+    content: attr(data-label); flex: none; text-align: left;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+  }
+  .eval-table td[data-label=""]::before { content: none; }
+  .eval-table td[data-label=""] .btn { width: 100%; margin-top: 8px; }
+  .eval-table td[data-label="Details"] { display: block; text-align: left; }
+  .eval-table td[data-label="Details"]::before { display: block; margin-bottom: 2px; }
+}
+
+@media (max-width: 560px) {
+  .filter-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+  .filter-bar .field { min-width: 0; margin: 0; }
+  .filter-bar .field:nth-child(5) { grid-column: 1 / -1; }
+  .filter-bar .btn { grid-column: 1 / -1; width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .app-content { padding: 22px 14px 48px; }
+  /* top bar: brand, badge, two icon buttons and Sign Out all have to fit on one line */
+  .topbar { padding: 0 12px; }
+  .topbar-brand { font-size: 21px; letter-spacing: 5px; }
+  .topbar-user { gap: 6px; min-width: 0; }
+  .topbar-user .badge-admin { padding: 3px 8px; letter-spacing: 0.6px; }
+  .topbar .fx-mute, .topbar .theme-toggle { width: 30px; height: 30px; }
+  .topbar .btn-sm { padding: 6px 10px; }
+  .page-title { font-size: 32px; }
+  .login-card { padding: 38px 24px 32px; }
+  .section-header { padding: 12px 14px; gap: 10px; }
+  .section-title { font-size: 17px; line-height: 1.25; }
+  .section-body { padding: 16px 14px; }
+  .field { margin-bottom: 14px; }
+  .period-grid { gap: 10px; }
+  .soft-row { padding: 12px; }
+  .comp-name { padding: 12px 14px; }
+  .comp-rating { padding: 10px 12px; }
+  .form-actions { flex-direction: column-reverse; }
+  .form-actions .btn { width: 100%; padding: 13px; }
+
+  /* the evaluation detail */
+  .modal-overlay { padding: 10px; }
+  .modal-box { padding: 16px 14px; border-radius: 14px; }
+  .modal-header { flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 14px; }
+  .modal-actions { order: -1; justify-content: space-between; }
+  .modal-header h2 { font-size: 22px; }
+  .detail-grid { grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .detail-item p { overflow-wrap: anywhere; }
+  .detail-ratings { gap: 6px; }
+  .detail-rating-box { padding: 10px 4px; }
+  .detail-rating-box .dr-lbl { font-size: 9px; letter-spacing: 0.4px; overflow-wrap: anywhere; }
+  .notes-slot .btn { max-width: 100%; white-space: normal; text-align: left; }
+  .soft-line { gap: 4px 10px; }
+}
+
+@media (max-width: 360px) {
+  .tab-btn { padding: 8px 8px; font-size: 11px; letter-spacing: 0; }
+  .tabs { padding: 3px; }
+  .page-title { font-size: 28px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
 }
@@ -845,11 +923,11 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
             <span class="section-title">Competency Ratings</span>
           </div>
           <div class="section-body">
-            <p style="font-size:12px; color:var(--mid); margin-bottom:14px;">
-              <strong>3 — Pride (Exceeds):</strong> Consistently exceeds expectations &nbsp;|&nbsp;
-              <strong>2 — Passion (Meets):</strong> Meets expectations consistently &nbsp;|&nbsp;
-              <strong>1 — Professionalism (Improves):</strong> Needs improvement
-            </p>
+            <div class="rating-legend">
+              <div><strong>3 — Pride (Exceeds):</strong> Consistently exceeds expectations</div>
+              <div><strong>2 — Passion (Meets):</strong> Meets expectations consistently</div>
+              <div><strong>1 — Professionalism (Improves):</strong> Needs improvement</div>
+            </div>
             <div class="comp-table" id="comp-table"></div>
           </div>
         </div>
@@ -919,7 +997,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
         <div class="error-msg" id="submit-error" style="margin-bottom:12px; font-size:13px;"></div>
         <div class="success-msg" id="submit-success" style="margin-bottom:12px; font-size:13px;"></div>
 
-        <div style="display:flex; justify-content:flex-end; gap:10px; padding-bottom:40px;">
+        <div class="form-actions">
           <button class="btn btn-ghost" onclick="clearForm()">Clear Form</button>
           <button class="btn btn-primary" id="submit-btn" onclick="submitEvaluation()">
             <span id="submit-label">Submit Evaluation</span>
@@ -1734,11 +1812,11 @@ function renderEvalTable(evals) {
     const flag = PrideSkills.flaggedSkills(e.softSkills).length ? ' <span class="chip flag-chip" title="A critical soft skill was rated Improves">⚠ Critical</span>' : '';
     return `<tr>
       <td><strong>${esc(e.tmName)}</strong><br><small style="color:var(--mid)">${esc(e.position||'')}</small>${areaTag ? ` <span class="chip">${esc(areaTag)}</span>` : ''}${lvl === 'leadership' ? ' <span class="chip">Leadership</span>' : ''}${flag}</td>
-      <td>${esc(e.outlet||'—')}</td>
-      <td><span class="period-pill">${esc(e.period)}-Day</span></td>
-      <td>${date}</td>
-      <td><small>${esc(e.submittedByName||e.submittedBy||'—')}</small><br><small style="color:var(--mid)">${esc(sub)}</small></td>
-      <td><button class="btn btn-outline btn-sm" data-action="view-eval" data-id="${esc(e.id)}">View</button></td>
+      <td data-label="Outlet">${esc(e.outlet||'—')}</td>
+      <td data-label="Period"><span class="period-pill">${esc(e.period)}-Day</span></td>
+      <td data-label="Eval date">${date}</td>
+      <td data-label="Submitted by"><span><small>${esc(e.submittedByName||e.submittedBy||'—')}</small><br><small style="color:var(--mid)">${esc(sub)}</small></span></td>
+      <td data-label=""><button class="btn btn-outline btn-sm" data-action="view-eval" data-id="${esc(e.id)}">View</button></td>
     </tr>`;
   }).join('');
 }

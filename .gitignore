@@ -5,3 +5,4 @@ node_modules/
 .claude-flow/
 
 firestore-debug.log
+.playwright-mcp/

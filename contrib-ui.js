@@ -296,11 +296,11 @@ function renderActivityFeed(rows) {
          <button class="btn btn-outline btn-sm" data-action="open-eval" data-id="${escHtml(r.evalId)}">View</button>`
       : `<small>${escHtml(r.evalId)}</small>`;
     return `<tr>
-      <td>${fmtTime(r.at)}</td>
-      <td>${escHtml(r.byName || r.byEmail)}</td>
-      <td>${escHtml(desc.label)}</td>
-      <td>${evalCell}</td>
-      <td>${desc.lines.map(l => escHtml(l)).join('<br>')}</td>
+      <td data-label="When">${fmtTime(r.at)}</td>
+      <td data-label="Who">${escHtml(r.byName || r.byEmail)}</td>
+      <td data-label="Action">${escHtml(desc.label)}</td>
+      <td data-label="Evaluation"><span>${evalCell}</span></td>
+      <td data-label="Details">${desc.lines.map(l => escHtml(l)).join('<br>')}</td>
     </tr>`;
   }).join('');
 }
