@@ -261,24 +261,6 @@ body {
 .check-item .check-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
 .check-item.checked { background: var(--gold-soft); border-color: var(--line-gold); }
 
-/* ── SKILL ROWS ── */
-.skill-table { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-.skill-row { display: grid; align-items: start; border-bottom: 1px solid var(--line); }
-.skill-row:last-child { border-bottom: none; }
-.skill-row-head { background: var(--surface-2); padding: 10px 16px; }
-.skill-row-head .skill-name { font-size: 12px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--gold-hi); }
-.skill-row-head .skill-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.skill-row-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; }
-@media (max-width: 500px) { .skill-row-fields { grid-template-columns: 1fr; } }
-.skill-cell { padding: 10px 14px; border-right: 1px solid var(--line); }
-.skill-cell:last-child { border-right: none; }
-.skill-cell label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 5px; }
-.skill-cell input {
-  width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px;
-  background: var(--input-bg); color: var(--text); font-size: 12px; font-family: inherit;
-}
-.skill-cell input:focus { outline: none; border-color: var(--gold); box-shadow: var(--focus); }
-
 /* ── RATING BUTTONS ── */
 .rating-group { display: flex; gap: 1px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
 .rating-opt { flex: 1; }
@@ -572,6 +554,38 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 .fx-mute[data-muted="true"] .slash { display: block; }
 .fx-mute-login { position: absolute; top: 14px; right: 14px; z-index: 2; }
 
+/* ══ SOFT SKILLS ══ */
+.soft-table { display: grid; gap: 12px; }
+.soft-row { border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); padding: 14px 16px; }
+.soft-row.is-critical { border-color: var(--line-gold); box-shadow: inset 3px 0 0 var(--gold); }
+.soft-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.soft-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.crit-tag, .new-tag { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+.crit-tag { background: var(--gold-grad); color: var(--on-gold); }
+.new-tag { border: 1px solid var(--line-gold); color: var(--gold-hi); }
+.soft-desc { font-size: 12.5px; color: var(--text-2); }
+.soft-eg { font-size: 12px; color: var(--muted); font-style: italic; margin: 2px 0 10px; }
+.soft-row .rating-group { max-width: 420px; }
+.soft-note {
+  width: 100%; margin-top: 10px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--input-bg); color: var(--text); font-family: inherit; font-size: 13px;
+}
+.soft-note:focus { outline: none; border-color: var(--gold); box-shadow: var(--focus); }
+.soft-note::placeholder { color: var(--placeholder); }
+#leadership-wrap { margin-top: 28px; padding-top: 22px; border-top: 1px dashed var(--line-gold); }
+.soft-subhead { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.detail-sub { margin-top: 18px; }
+.soft-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.soft-line-name { flex: 1 1 220px; font-size: 13px; color: var(--text); }
+.soft-line-note { flex: 1 1 100%; font-size: 12.5px; color: var(--text-2); font-style: italic; }
+.soft-line.is-flagged .soft-line-name { color: var(--danger); font-weight: 600; }
+.rate-pill { font-size: 11px; font-weight: 700; padding: 3px 11px; border-radius: 20px; border: 1px solid var(--line); color: var(--text-2); white-space: nowrap; }
+.rate-pill.r3 { background: rgba(93,187,140,0.14); color: var(--success); border-color: rgba(93,187,140,0.35); }
+.rate-pill.r2 { background: var(--gold-soft); color: var(--gold-hi); border-color: var(--line-gold); }
+.rate-pill.r1 { background: rgba(238,123,109,0.14); color: var(--danger); border-color: rgba(238,123,109,0.4); }
+.flag-banner { background: rgba(238,123,109,0.12); border: 1px solid rgba(238,123,109,0.4); color: var(--danger); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 8px; }
+.chip.flag-chip { background: rgba(238,123,109,0.14); color: var(--danger); border-color: rgba(238,123,109,0.4); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
 }
@@ -686,7 +700,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
             </div>
             <div class="field">
               <label>Position / Title</label>
-              <input type="text" id="f-position" placeholder="e.g. Food Server, Busser">
+              <select id="f-position" onchange="renderSoftSkills()"><option value="">Select position…</option></select>
             </div>
             <div class="field">
               <label>Start Date</label>
@@ -742,15 +756,21 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
           </div>
         </div>
 
-        <!-- Section B: Skills -->
+        <!-- Section B: Soft Skills -->
         <div class="section-card">
           <div class="section-header">
             <span class="section-badge">B</span>
-            <span class="section-title">Skills Trained This Period</span>
+            <span class="section-title">Soft Skills</span>
           </div>
           <div class="section-body">
-            <p style="font-size:12px; color:var(--mid); margin-bottom:12px;">Enter trainer name, date trained, and date witnessed for each skill completed.</p>
-            <div id="skills-table" class="skill-table"></div>
+            <p style="font-size:12px; color:var(--mid); margin-bottom:14px;">Rate each skill you have observed this period: <strong>3</strong> Exceeds &nbsp;·&nbsp; <strong>2</strong> Meets &nbsp;·&nbsp; <strong>1</strong> Improves. Skills tagged <span class="crit-tag">Critical</span> are the Top 3 non-negotiables and must be rated. Add a real example if you can.</p>
+            <div id="soft-skills" class="soft-table"></div>
+            <p id="soft-skills-hint" class="contrib-empty" style="margin-top:12px;"></p>
+            <div id="leadership-wrap" hidden>
+              <div class="soft-subhead">Leadership Focus</div>
+              <p style="font-size:12px; color:var(--mid); margin-bottom:12px;">Additional skills for leadership roles.</p>
+              <div id="leadership-skills" class="soft-table"></div>
+            </div>
           </div>
         </div>
 
@@ -891,6 +911,14 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
           </select>
         </div>
         <div class="field">
+          <label>Role</label>
+          <select id="filter-level" onchange="filterEvals()">
+            <option value="">All Roles</option>
+            <option value="line">Line level</option>
+            <option value="leadership">Leadership</option>
+          </select>
+        </div>
+        <div class="field">
           <label>Outlet</label>
           <input type="text" id="filter-outlet" placeholder="Filter by outlet..." oninput="filterEvals()">
         </div>
@@ -944,6 +972,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 <script src="contrib-core.js"></script>
 <script src="contrib-ui.js"></script>
 <script src="fx.js"></script>
+<script src="softskills.js"></script>
 
 <script>
 // ══════════════════════════════════════════════════════════════════════
@@ -986,14 +1015,6 @@ const PERIOD_DATA = {
       { id: "uniforms_grooming", label: "Uniforms & Grooming Standards", sub: "Dress code, appearance requirements" },
       { id: "safety_emergency", label: "Safety & Emergency Procedures", sub: "Emergency exits, incident reporting" },
     ],
-    skills: [
-      { id: "greeting_seating", name: "Greeting & Seating", desc: "Warmly greeting guests within 30 seconds, assisting with seating" },
-      { id: "table_setup", name: "Table Setup & Reset", desc: "Proper mise en place, reset standards between guests" },
-      { id: "order_taking", name: "Order Taking", desc: "Accurate ordering and repeating orders back to the guest" },
-      { id: "menu_knowledge", name: "Menu Knowledge", desc: "Ability to describe menu items, ingredients, allergens" },
-      { id: "team_comm_skills", name: "Team Communication", desc: "Knowing where the communication board, policy board and pre-shift board are" },
-      { id: "pos_basics", name: "POS — Basic Transactions", desc: "Entering orders, modifiers, sending to kitchen" },
-    ],
     competencies: ["Pride", "Passion", "Professionalism"],
   },
   30: {
@@ -1005,14 +1026,6 @@ const PERIOD_DATA = {
       { id: "food_safety_review", label: "Food Safety — 30-Day Review", sub: "Temperature control, handwashing, storage" },
       { id: "cash_handling", label: "Cash Handling Procedures", sub: "Room charges, House Cards, Silver Feathers, PCI compliance" },
     ],
-    skills: [
-      { id: "menu_knowledge_30", name: "Menu Knowledge", desc: "Menu quiz passed with 85% or higher; full menu, specials, beverage program" },
-      { id: "hospitality_stds", name: "Hospitality Standards", desc: "5/10 Rule, accurate ordering and repeating orders to the guest" },
-      { id: "cash_payments", name: "Cash / Payments", desc: "Room Charges, House Cards, Silver Feathers — all payment types processed correctly" },
-      { id: "shift_readiness", name: "Shift Readiness", desc: "Pays attention during pre-shift, engages in team interaction, arrives prepared" },
-      { id: "upselling", name: "Upselling & Suggestive Selling", desc: "Recommending appetizers, beverages, desserts effectively" },
-      { id: "side_work", name: "Side Work Completion", desc: "Opening and closing duties completed to standard" },
-    ],
     competencies: ["Pride", "Passion", "Professionalism"],
   },
   45: {
@@ -1023,14 +1036,6 @@ const PERIOD_DATA = {
       { id: "cross_training", label: "Cross-Training Introduction", sub: "Adjacent role exposure if applicable" },
       { id: "silver_feathers", label: "Silver Feathers Loyalty Program", sub: "Program overview, enrollments, point redemptions" },
     ],
-    skills: [
-      { id: "beverage_knowledge", name: "Beverage Knowledge", desc: "Full bar menu, wine list, specialty cocktails — confident recommendations" },
-      { id: "guest_recovery_skill", name: "Guest Recovery", desc: "Ability to identify service failures and apply the PRIDE recovery model" },
-      { id: "speed_efficiency", name: "Speed & Efficiency", desc: "Table turns within standard time frames without sacrificing service quality" },
-      { id: "teamwork", name: "Teamwork & Support", desc: "Proactively assisting teammates, running food, pre-bussing" },
-      { id: "pos_advanced_skill", name: "POS — Advanced", desc: "All payment types, gift cards, server banking completed independently" },
-      { id: "loyalty_program", name: "Silver Feathers Enrollment", desc: "Able to explain and enroll guests in the loyalty program" },
-    ],
     competencies: ["Pride", "Passion", "Professionalism"],
   },
   60: {
@@ -1038,14 +1043,6 @@ const PERIOD_DATA = {
       { id: "pride_graduation", label: "PRIDE Training Graduation Review", sub: "Recap of all training modules completed" },
       { id: "ongoing_standards", label: "Ongoing Hospitality Standards Review", sub: "Expectations for independent performance" },
       { id: "career_development", label: "Career Development & Goals", sub: "Opportunities for growth within F&B" },
-    ],
-    skills: [
-      { id: "independence", name: "Independent Station Work", desc: "Working a full station without trainer support; consistent execution of all standards" },
-      { id: "mentorship", name: "Mentorship Readiness", desc: "Ability to model PRIDE behaviors for newer team members" },
-      { id: "guest_relationships", name: "Guest Relationships", desc: "Recognizing regulars, personalizing service, building rapport" },
-      { id: "all_payments_60", name: "All Payment Methods", desc: "All payment types processed correctly and independently every shift" },
-      { id: "menu_mastery", name: "Menu Mastery", desc: "Full menu knowledge including daily specials, seasonal items, allergen awareness" },
-      { id: "leadership_behavior", name: "Leadership Behaviors", desc: "Demonstrating positive attitude, accountability, and team-first mindset daily" },
     ],
     competencies: ["Pride", "Passion", "Professionalism"],
   }
@@ -1201,10 +1198,10 @@ function switchTab(tab, { instant = false } = {}) {
 // ══════════════════════════════════════════════════════════════════════
 //  PERIOD SELECTION
 // ══════════════════════════════════════════════════════════════════════
-// True if anything period-specific (checklist, skills, ratings) has been filled in
+// True if anything period-specific (checklist, soft skills, ratings) has been filled in
 function hasPeriodData() {
   const root = document.getElementById('period-sections');
-  return [...root.querySelectorAll('#classes-list input, #skills-table input, #comp-table input')]
+  return [...root.querySelectorAll('#classes-list input, #soft-skills input, #leadership-skills input, #comp-table input')]
     .some(i => (i.type === 'checkbox' || i.type === 'radio') ? i.checked : i.value.trim() !== '');
 }
 
@@ -1238,30 +1235,8 @@ function renderPeriodSections(period) {
     </label>
   `).join('');
 
-  // Skills
-  const skillsTable = document.getElementById('skills-table');
-  skillsTable.innerHTML = data.skills.map(s => `
-    <div>
-      <div class="skill-row-head">
-        <div class="skill-name">${s.name}</div>
-        <div class="skill-desc">${s.desc}</div>
-      </div>
-      <div class="skill-row-fields">
-        <div class="skill-cell">
-          <label>Trainer Name</label>
-          <input type="text" id="skill-trainer-${s.id}" placeholder="Trainer name">
-        </div>
-        <div class="skill-cell">
-          <label>Date Trained</label>
-          <input type="date" id="skill-trained-${s.id}">
-        </div>
-        <div class="skill-cell">
-          <label>Date Witnessed</label>
-          <input type="date" id="skill-witnessed-${s.id}">
-        </div>
-      </div>
-    </div>
-  `).join('');
+  // Soft skills (and, for leadership roles, the leadership focus)
+  renderSoftSkills({ fresh: true });
 
   // Competencies
   const compTable = document.getElementById('comp-table');
@@ -1294,6 +1269,82 @@ function renderPeriodSections(period) {
   }).join('');
 }
 
+// ── Soft skills ──
+function fillPositions() {
+  const sel = document.getElementById('f-position');
+  const g = PrideSkills.positionsByLevel();
+  const group = (label, items) => `<optgroup label="${label}">${items.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('')}</optgroup>`;
+  sel.innerHTML = '<option value="">Select position…</option>' + group('Line level', g.line) + group('Leadership', g.leadership);
+}
+fillPositions();
+
+function softSkillRow(s, group) {
+  const isNew = currentPeriod !== 14 && s.from === currentPeriod;
+  const opts = [[3, 'Exceeds'], [2, 'Meets'], [1, 'Improves']].map(([v, l]) => `
+        <div class="rating-opt">
+          <input type="radio" name="ss-${s.id}" id="ss-${s.id}-${v}" value="${v}">
+          <label for="ss-${s.id}-${v}"><span class="r-num">${v}</span><span class="r-lbl">${l}</span></label>
+        </div>`).join('');
+  return `
+    <div class="soft-row${s.critical ? ' is-critical' : ''}" data-skill="${s.id}" data-group="${group}">
+      <div class="soft-head">
+        <span class="soft-name">${esc(s.name)}</span>
+        ${s.critical ? '<span class="crit-tag" title="One of the Top 3 non-negotiables: must be rated">Critical</span>' : ''}
+        ${isNew ? `<span class="new-tag">New at ${currentPeriod}-day</span>` : ''}
+      </div>
+      <div class="soft-desc">${esc(s.desc)}</div>
+      ${s.example ? `<div class="soft-eg">e.g. ${esc(s.example)}</div>` : ''}
+      <div class="rating-group">${opts}</div>
+      <input type="text" class="soft-note" id="ss-note-${s.id}" maxlength="300" placeholder="Example you observed (optional)" aria-label="Example you observed for ${esc(s.name)}">
+    </div>`;
+}
+
+// Keep what has been entered when the list is re-rendered (e.g. the position changes)
+function snapshotSoftSkills() {
+  const snap = {};
+  document.querySelectorAll('#soft-skills .soft-row, #leadership-skills .soft-row').forEach(row => {
+    const checked = row.querySelector('input[type="radio"]:checked');
+    snap[row.dataset.skill] = { rating: checked ? checked.value : '', note: row.querySelector('.soft-note').value };
+  });
+  return snap;
+}
+
+function renderSoftSkills({ fresh = false } = {}) {
+  if (!currentPeriod) return;
+  const snap = fresh ? {} : snapshotSoftSkills();
+  const level = PrideSkills.roleLevel(document.getElementById('f-position').value);
+  const { skills, leadership } = PrideSkills.skillsFor(currentPeriod, level);
+  document.getElementById('soft-skills').innerHTML = skills.map(sk => softSkillRow(sk, 'all')).join('');
+  document.getElementById('leadership-skills').innerHTML = leadership.map(sk => softSkillRow(sk, 'leadership')).join('');
+  document.getElementById('leadership-wrap').hidden = !leadership.length;
+  document.getElementById('soft-skills-hint').textContent = level ? '' : 'Pick a position above to see the leadership focus for leadership roles.';
+  Object.entries(snap).forEach(([id, v]) => {
+    const row = document.querySelector(`.soft-row[data-skill="${id}"]`);
+    if (!row) return;
+    if (v.rating) { const r = row.querySelector(`input[value="${v.rating}"]`); if (r) r.checked = true; }
+    row.querySelector('.soft-note').value = v.note;
+  });
+}
+
+function softSkillsDetailHtml(e) {
+  const entries = Object.values(e.softSkills || {});
+  if (!entries.length) return '';
+  const row = sk => `<div class="soft-line${sk.critical && sk.rating === 1 ? ' is-flagged' : ''}">
+      <div class="soft-line-name">${esc(sk.name)}${sk.critical ? ' <span class="crit-tag">Critical</span>' : ''}</div>
+      <span class="rate-pill r${esc(sk.rating || 0)}">${esc(PrideSkills.scaleLabel(sk.rating))}</span>
+      ${sk.note ? `<div class="soft-line-note">${esc(sk.note)}</div>` : ''}
+    </div>`;
+  const all = entries.filter(sk => sk.group !== 'leadership');
+  const lead = entries.filter(sk => sk.group === 'leadership');
+  const flagged = PrideSkills.flaggedSkills(e.softSkills);
+  return `<div class="detail-section">
+      <h4>Soft Skills</h4>
+      ${flagged.length ? `<div class="flag-banner">⚠ Critical skills rated Improves: ${esc(flagged.join(', '))}</div>` : ''}
+      ${all.map(row).join('')}
+      ${lead.length ? `<h4 class="detail-sub">Leadership Focus</h4>${lead.map(row).join('')}` : ''}
+    </div>`;
+}
+
 function compDesc(comp) {
   return { Pride: "Exceeds expectations consistently", Passion: "Meets expectations consistently", Professionalism: "Demonstrates professional conduct" }[comp] || '';
 }
@@ -1323,19 +1374,23 @@ async function submitEvaluation() {
   const evalDate = document.getElementById('f-eval-date').value;
   if (!tmName) return fail('Team Member Name is required.');
   if (!outlet) return fail('Outlet is required.');
+  const position = document.getElementById('f-position').value;
+  if (!position) return fail('Position is required.');
   if (!currentPeriod) return fail('Please select an evaluation period.');
   if (!evalDate) return fail('Evaluation date is required.');
   if (startDate && evalDate < startDate) return fail('Evaluation date cannot be before the start date.');
 
   const data = PERIOD_DATA[currentPeriod];
 
-  for (const s of data.skills) {
-    const trained = document.getElementById('skill-trained-'+s.id).value;
-    const witnessed = document.getElementById('skill-witnessed-'+s.id).value;
-    if (trained && witnessed && witnessed < trained) {
-      return fail(`${s.name}: Date Witnessed cannot be before Date Trained.`);
-    }
-  }
+  const level = PrideSkills.roleLevel(position);
+  const shown = PrideSkills.skillsFor(currentPeriod, level);
+  const skillRatings = {};
+  [...shown.skills, ...shown.leadership].forEach(sk => {
+    const sel = document.querySelector(`input[name="ss-${sk.id}"]:checked`);
+    if (sel) skillRatings[sk.id] = parseInt(sel.value);
+  });
+  const unrated = PrideSkills.missingCritical(shown.skills, skillRatings);
+  if (unrated.length) return fail(`Please rate the critical soft skill${unrated.length > 1 ? 's' : ''}: ${unrated.join(', ')}.`);
   for (const comp of data.competencies) {
     if (!document.querySelector(`input[name="comp-${comp.toLowerCase()}"]:checked`)) {
       return fail(`Please rate ${comp} in the Competency Ratings section.`);
@@ -1350,16 +1405,17 @@ async function submitEvaluation() {
     classes[c.id] = { label: c.label, completed: document.getElementById('class-'+c.id)?.checked || false };
   });
 
-  // Collect skills
-  const skills = {};
-  data.skills.forEach(s => {
-    skills[s.id] = {
-      name: s.name,
-      trainer: document.getElementById('skill-trainer-'+s.id)?.value.trim() || '',
-      dateTrained: document.getElementById('skill-trained-'+s.id)?.value || '',
-      dateWitnessed: document.getElementById('skill-witnessed-'+s.id)?.value || '',
+  // Collect soft skills
+  const softSkills = {};
+  const collect = (list, group) => list.forEach(sk => {
+    softSkills[sk.id] = {
+      name: sk.name, group, critical: sk.critical,
+      rating: skillRatings[sk.id] || null,
+      note: (document.getElementById('ss-note-' + sk.id)?.value || '').trim(),
     };
   });
+  collect(shown.skills, 'all');
+  collect(shown.leadership, 'leadership');
 
   // Collect competencies
   const competencies = {};
@@ -1371,11 +1427,11 @@ async function submitEvaluation() {
 
   const evaluation = {
     tmName, outlet,
-    position: document.getElementById('f-position').value.trim(),
+    position, roleLevel: level || 'line',
     startDate: document.getElementById('f-start-date').value,
     period: currentPeriod,
     evalDate,
-    classes, skills, competencies,
+    classes, softSkills, competencies,
     policies: document.getElementById('f-policies').value.trim(),
     expectations: document.getElementById('f-expectations').value.trim(),
     strengths: document.getElementById('f-strengths').value.trim(),
@@ -1427,28 +1483,27 @@ async function submitEvaluation() {
 // Returns true if the email was sent, false otherwise (never throws)
 async function sendEmailNotification(ev) {
   try {
-    const subject = `PRIDE Eval: ${ev.tmName} — ${ev.period}-Day | ${ev.outlet}`;
+    const flaggedSkills = PrideSkills.flaggedSkills(ev.softSkills);
+    const subject = `PRIDE Eval: ${ev.tmName} — ${ev.period}-Day | ${ev.outlet}` + (flaggedSkills.length ? ' | ⚠ Critical skill flagged' : '');
     const ratingLines = Object.entries(ev.competencies)
       .map(([k,v]) => `${k}: ${v ? ['—','Professionalism (1)','Passion (2)','Pride (3)'][v] : 'Not rated'}`).join('\n');
     const classLines = Object.values(ev.classes)
       .map(c => `${c.completed ? '☑' : '☐'} ${c.label}`).join('\n');
-    const skillLines = Object.values(ev.skills)
-      .map(s => `${s.name}: Trainer: ${s.trainer||'—'} | Trained: ${s.dateTrained||'—'} | Witnessed: ${s.dateWitnessed||'—'}`).join('\n');
     const body = [
       `PRIDE Training Log — ${ev.period}-Day Evaluation`,
       `Submitted by: ${ev.submittedByName}`,
       ``,
       `TEAM MEMBER: ${ev.tmName}`,
       `Outlet: ${ev.outlet}`,
-      `Position: ${ev.position || '—'}`,
+      `Position: ${ev.position || '—'} (${ev.roleLevel === 'leadership' ? 'Leadership' : 'Line level'})`,
       `Start Date: ${ev.startDate || '—'}`,
       `Eval Date: ${ev.evalDate}`,
       ``,
       `— A. CLASSES COMPLETED —`,
       classLines,
       ``,
-      `— B. SKILLS TRAINED —`,
-      skillLines,
+      `— B. SOFT SKILLS —`,
+      ...PrideSkills.emailLines(ev.softSkills),
       ``,
       `— C. POLICIES REVIEWED —`,
       ev.policies || '(none)',
@@ -1474,11 +1529,15 @@ async function sendEmailNotification(ev) {
       `Manager / Supervisor: ${ev.managerSig || '—'}`,
     ].join('\n');
 
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      subject,
-      body,
-      to_email: ADMIN_EMAIL,
-    });
+    // The evaluation is already saved, so a stalled email request must not leave the form stuck
+    await Promise.race([
+      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        subject,
+        body,
+        to_email: ADMIN_EMAIL,
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Email request timed out')), 10000)),
+    ]);
     return true;
   } catch(e) {
     console.warn('Email notification failed (non-blocking):', e);
@@ -1488,7 +1547,7 @@ async function sendEmailNotification(ev) {
 
 function clearForm() {
   // Reset every field in the form (header, period-specific and trainer sections)
-  document.querySelectorAll('#panel-new input, #panel-new textarea').forEach(el => {
+  document.querySelectorAll('#panel-new input, #panel-new textarea, #panel-new select').forEach(el => {
     if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
     else el.value = '';
   });
@@ -1513,7 +1572,7 @@ function saveDraft() {
   if (!key || submitting) return;
   try {
     const vals = {}, checks = {};
-    document.querySelectorAll('#panel-new input[id], #panel-new textarea[id]').forEach(el => {
+    document.querySelectorAll('#panel-new input[id], #panel-new textarea[id], #panel-new select[id]').forEach(el => {
       if (el.type === 'checkbox' || el.type === 'radio') checks[el.id] = el.checked;
       else vals[el.id] = el.value;
     });
@@ -1535,6 +1594,11 @@ function restoreDraft() {
   if (draft.period) {
     const card = document.querySelector(`.period-card[data-period="${draft.period}"]`);
     if (card) selectPeriod(card, { skipConfirm: true, noScroll: true });
+  }
+  // The position decides whether the leadership skills exist, so apply it before the other values
+  if (draft.vals && draft.vals['f-position']) {
+    document.getElementById('f-position').value = draft.vals['f-position'];
+    renderSoftSkills();
   }
   Object.entries(draft.vals || {}).forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.value = v; });
   Object.entries(draft.checks || {}).forEach(([id, c]) => {
@@ -1570,8 +1634,10 @@ function filterEvals() {
   const period = document.getElementById('filter-period').value;
   const outlet = document.getElementById('filter-outlet').value.toLowerCase();
   const name = document.getElementById('filter-name').value.toLowerCase();
+  const level = document.getElementById('filter-level').value;
   const filtered = allEvals.filter(e =>
     (!period || String(e.period) === period) &&
+    (!level || (e.roleLevel || PrideSkills.roleLevel(e.position)) === level) &&
     (!outlet || (e.outlet||'').toLowerCase().includes(outlet)) &&
     (!name || (e.tmName||'').toLowerCase().includes(name))
   );
@@ -1579,6 +1645,7 @@ function filterEvals() {
 }
 function clearFilters() {
   document.getElementById('filter-period').value = '';
+  document.getElementById('filter-level').value = '';
   document.getElementById('filter-outlet').value = '';
   document.getElementById('filter-name').value = '';
   renderEvalTable(allEvals);
@@ -1593,8 +1660,10 @@ function renderEvalTable(evals) {
   tbody.innerHTML = evals.map(e => {
     const date = esc(e.evalDate || '—');
     const sub = e.submittedAt?.toDate ? e.submittedAt.toDate().toLocaleDateString() : '—';
+    const lvl = e.roleLevel || PrideSkills.roleLevel(e.position);
+    const flag = PrideSkills.flaggedSkills(e.softSkills).length ? ' <span class="chip flag-chip" title="A critical soft skill was rated Improves">⚠ Critical</span>' : '';
     return `<tr>
-      <td><strong>${esc(e.tmName)}</strong><br><small style="color:var(--mid)">${esc(e.position||'')}</small></td>
+      <td><strong>${esc(e.tmName)}</strong><br><small style="color:var(--mid)">${esc(e.position||'')}</small>${lvl === 'leadership' ? ' <span class="chip">Leadership</span>' : ''}${flag}</td>
       <td>${esc(e.outlet||'—')}</td>
       <td><span class="period-pill">${esc(e.period)}-Day</span></td>
       <td>${date}</td>
@@ -1619,6 +1688,7 @@ function openDetail(id) {
     <div class="detail-grid">
       <div class="detail-item"><label>Outlet</label><p>${esc(e.outlet||'—')}</p></div>
       <div class="detail-item"><label>Position</label><p>${esc(e.position||'—')}</p></div>
+      <div class="detail-item"><label>Role Level</label><p>${(e.roleLevel || PrideSkills.roleLevel(e.position)) === 'leadership' ? 'Leadership' : (e.roleLevel || PrideSkills.roleLevel(e.position)) === 'line' ? 'Line level' : '—'}</p></div>
       <div class="detail-item"><label>Eval Date</label><p>${esc(e.evalDate||'—')}</p></div>
       <div class="detail-item"><label>Start Date</label><p>${esc(e.startDate||'—')}</p></div>
       <div class="detail-item"><label>Submitted By</label><p>${esc(e.submittedByName||e.submittedBy||'—')}</p></div>
@@ -1629,6 +1699,8 @@ function openDetail(id) {
       <h4>Classes / Training Modules</h4>
       ${Object.values(e.classes||{}).map(c=>`<span class="chip ${c.completed?'green':''}">${c.completed?'☑':'☐'} ${esc(c.label)}</span>`).join('')}
     </div>
+
+    ${softSkillsDetailHtml(e)}
 
     <div class="detail-section">
       <h4>Competency Ratings</h4>
