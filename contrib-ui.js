@@ -118,7 +118,7 @@ function renderSlot(section) {
     : '';
   const add = contribState.openForms.has(section)
     ? contribFormHtml(`sec-${section}`, { withRatings: false, section })
-    : `<button type="button" class="btn btn-ghost btn-sm" data-action="note-open" data-section="${escHtml(section)}">＋ Add a note on ${escHtml(label)}</button>`;
+    : `<button type="button" class="btn btn-ghost btn-sm" data-action="note-open" data-section="${escHtml(section)}" aria-label="Add a note on ${escHtml(label)}">${PrideContrib.isSkillSection(section) ? '＋ Add note' : `＋ Add a note on ${escHtml(label)}`}</button>`;
   host.innerHTML = `${head}${items.map(contribItemHtml).join('')}
     <div class="notes-add">${add}</div>
     <div class="error-msg" data-error-for="${slotErrorScope(section)}"></div>`;

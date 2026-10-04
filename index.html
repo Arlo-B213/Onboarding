@@ -592,6 +592,9 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 .notes-count { background: var(--gold-grad); color: var(--on-gold); border-radius: 20px; padding: 1px 8px; font-size: 10px; letter-spacing: 0.4px; }
 .notes-add { margin-top: 8px; }
 .notes-slot:not([data-section="general"]) .contrib-item { margin-bottom: 10px; }
+.soft-block { border-bottom: 1px solid var(--line); }
+.soft-block .soft-line { border-bottom: 0; padding-bottom: 4px; }
+.notes-slot[data-section^="skill:"] { margin: 0 0 12px 6px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
@@ -1357,15 +1360,19 @@ function renderSoftSkills({ fresh = false } = {}) {
 }
 
 function softSkillsDetailHtml(e) {
-  const entries = Object.values(e.softSkills || {});
+  const entries = Object.entries(e.softSkills || {});
   if (!entries.length) return '';
-  const row = sk => `<div class="soft-line${sk.critical && sk.rating === 1 ? ' is-flagged' : ''}">
+  // Each skill is followed by its own leader-notes slot (section "skill:<id>")
+  const row = ([id, sk]) => `<div class="soft-block">
+    <div class="soft-line${sk.critical && sk.rating === 1 ? ' is-flagged' : ''}">
       <div class="soft-line-name">${esc(sk.name)}${sk.critical ? ' <span class="crit-tag">Critical</span>' : ''}</div>
       <span class="rate-pill r${esc(sk.rating || 0)}">${esc(PrideSkills.scaleLabel(sk.rating))}</span>
       ${sk.note ? `<div class="soft-line-note">${esc(sk.note)}</div>` : ''}
-    </div>`;
-  const all = entries.filter(sk => sk.group !== 'leadership');
-  const lead = entries.filter(sk => sk.group === 'leadership');
+    </div>
+    <div class="notes-slot" data-section="skill:${esc(id)}"></div>
+  </div>`;
+  const all = entries.filter(([, sk]) => sk.group !== 'leadership');
+  const lead = entries.filter(([, sk]) => sk.group === 'leadership');
   const flagged = PrideSkills.flaggedSkills(e.softSkills);
   return `<div class="detail-section">
       <h4>Soft Skills</h4>
