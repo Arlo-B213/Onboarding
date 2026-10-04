@@ -52,26 +52,29 @@ const PrideSkills = (() => {
       desc: 'Translate floor issues upward to upper management and strategy downward to 43 employees, clearly and consistently, so everyone stays aligned.' },
   ];
 
+  // `area` is the side of the house the position works in; null means it could be either,
+  // so the evaluator picks it on the form.
   const POSITIONS = [
-    { label: 'Food Server', level: 'line' },
-    { label: 'Server Assistant / Busser', level: 'line' },
-    { label: 'Host / Hostess', level: 'line' },
-    { label: 'Food Runner', level: 'line' },
-    { label: 'Bartender', level: 'line' },
-    { label: 'Barback', level: 'line' },
-    { label: 'Line Cook', level: 'line' },
-    { label: 'Prep Cook', level: 'line' },
-    { label: 'Dishwasher', level: 'line' },
-    { label: 'Cashier', level: 'line' },
-    { label: 'Other (line level)', level: 'line' },
-    { label: 'Lead (any area)', level: 'leadership' },
-    { label: 'Sous Chef', level: 'leadership' },
-    { label: 'Chef', level: 'leadership' },
-    { label: 'Supervisor', level: 'leadership' },
-    { label: 'Assistant Manager', level: 'leadership' },
-    { label: 'Manager', level: 'leadership' },
-    { label: 'Director', level: 'leadership' },
-    { label: 'Other (leadership)', level: 'leadership' },
+    { label: 'Food Server', level: 'line', area: 'FOH' },
+    { label: 'Server Assistant / Busser', level: 'line', area: 'FOH' },
+    { label: 'Host / Hostess', level: 'line', area: 'FOH' },
+    { label: 'Food Runner', level: 'line', area: 'FOH' },
+    { label: 'Bartender', level: 'line', area: 'FOH' },
+    { label: 'Barback', level: 'line', area: 'FOH' },
+    { label: 'Line Cook', level: 'line', area: 'BOH' },
+    { label: 'Prep Cook', level: 'line', area: 'BOH' },
+    { label: 'Dishwasher', level: 'line', area: 'BOH' },
+    { label: 'Cashier', level: 'line', area: 'FOH' },
+    { label: 'Other (line level)', level: 'line', area: null },
+    { label: 'Lead (any area)', level: 'leadership', area: null },
+    { label: 'Sous Chef', level: 'leadership', area: 'BOH' },
+    { label: 'Asst. Chef', level: 'leadership', area: 'BOH' },
+    { label: 'Chef', level: 'leadership', area: 'BOH' },
+    { label: 'Supervisor', level: 'leadership', area: null },
+    { label: 'Assistant Manager', level: 'leadership', area: null },
+    { label: 'Manager', level: 'leadership', area: null },
+    { label: 'Director', level: 'leadership', area: null },
+    { label: 'Other (leadership)', level: 'leadership', area: null },
   ];
 
   const SCALE = { 3: 'Exceeds (3)', 2: 'Meets (2)', 1: 'Improves (1)' };
@@ -92,6 +95,13 @@ const PrideSkills = (() => {
     if (!key) return null;
     const hit = POSITIONS.find(p => p.label.toLowerCase() === key);
     return hit ? hit.level : null;
+  }
+
+  // 'FOH' | 'BOH' | null when the position is empty, unknown, or could be either side
+  function areaFor(position) {
+    const key = String(position || '').trim().toLowerCase();
+    const hit = key && POSITIONS.find(p => p.label.toLowerCase() === key);
+    return hit ? hit.area : null;
   }
 
   function positionsByLevel() {
@@ -126,7 +136,7 @@ const PrideSkills = (() => {
     return out;
   }
 
-  return { SOFT_SKILLS, LEADERSHIP_SKILLS, POSITIONS, skillsFor, roleLevel, positionsByLevel,
+  return { SOFT_SKILLS, LEADERSHIP_SKILLS, POSITIONS, skillsFor, roleLevel, areaFor, positionsByLevel,
            missingCritical, flaggedSkills, scaleLabel, emailLines };
 })();
 

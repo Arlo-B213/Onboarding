@@ -700,7 +700,15 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
             </div>
             <div class="field">
               <label>Position / Title</label>
-              <select id="f-position" onchange="renderSoftSkills()"><option value="">Select position…</option></select>
+              <select id="f-position" onchange="onPositionChange()"><option value="">Select position…</option></select>
+            </div>
+            <div class="field">
+              <label>Area</label>
+              <select id="f-area">
+                <option value="">Select area…</option>
+                <option value="FOH">FOH (Front of House)</option>
+                <option value="BOH">BOH (Back of House)</option>
+              </select>
             </div>
             <div class="field">
               <label>Start Date</label>
@@ -916,6 +924,14 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
             <option value="">All Roles</option>
             <option value="line">Line level</option>
             <option value="leadership">Leadership</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Area</label>
+          <select id="filter-area" onchange="filterEvals()">
+            <option value="">All Areas</option>
+            <option value="FOH">FOH</option>
+            <option value="BOH">BOH</option>
           </select>
         </div>
         <div class="field">
@@ -1278,6 +1294,13 @@ function fillPositions() {
 }
 fillPositions();
 
+// Picking a position fills in the area when the position implies one (cooks are BOH, servers FOH)
+function onPositionChange() {
+  const area = PrideSkills.areaFor(document.getElementById('f-position').value);
+  if (area) document.getElementById('f-area').value = area;
+  renderSoftSkills();
+}
+
 function softSkillRow(s, group) {
   const isNew = currentPeriod !== 14 && s.from === currentPeriod;
   const opts = [[3, 'Exceeds'], [2, 'Meets'], [1, 'Improves']].map(([v, l]) => `
@@ -1376,6 +1399,8 @@ async function submitEvaluation() {
   if (!outlet) return fail('Outlet is required.');
   const position = document.getElementById('f-position').value;
   if (!position) return fail('Position is required.');
+  const area = document.getElementById('f-area').value;
+  if (!area) return fail('Area (FOH or BOH) is required.');
   if (!currentPeriod) return fail('Please select an evaluation period.');
   if (!evalDate) return fail('Evaluation date is required.');
   if (startDate && evalDate < startDate) return fail('Evaluation date cannot be before the start date.');
@@ -1427,7 +1452,7 @@ async function submitEvaluation() {
 
   const evaluation = {
     tmName, outlet,
-    position, roleLevel: level || 'line',
+    position, area, roleLevel: level || 'line',
     startDate: document.getElementById('f-start-date').value,
     period: currentPeriod,
     evalDate,
@@ -1496,6 +1521,7 @@ async function sendEmailNotification(ev) {
       `TEAM MEMBER: ${ev.tmName}`,
       `Outlet: ${ev.outlet}`,
       `Position: ${ev.position || '—'} (${ev.roleLevel === 'leadership' ? 'Leadership' : 'Line level'})`,
+      `Area: ${ev.area || '—'}`,
       `Start Date: ${ev.startDate || '—'}`,
       `Eval Date: ${ev.evalDate}`,
       ``,
@@ -1635,9 +1661,11 @@ function filterEvals() {
   const outlet = document.getElementById('filter-outlet').value.toLowerCase();
   const name = document.getElementById('filter-name').value.toLowerCase();
   const level = document.getElementById('filter-level').value;
+  const area = document.getElementById('filter-area').value;
   const filtered = allEvals.filter(e =>
     (!period || String(e.period) === period) &&
     (!level || (e.roleLevel || PrideSkills.roleLevel(e.position)) === level) &&
+    (!area || (e.area || PrideSkills.areaFor(e.position)) === area) &&
     (!outlet || (e.outlet||'').toLowerCase().includes(outlet)) &&
     (!name || (e.tmName||'').toLowerCase().includes(name))
   );
@@ -1646,6 +1674,7 @@ function filterEvals() {
 function clearFilters() {
   document.getElementById('filter-period').value = '';
   document.getElementById('filter-level').value = '';
+  document.getElementById('filter-area').value = '';
   document.getElementById('filter-outlet').value = '';
   document.getElementById('filter-name').value = '';
   renderEvalTable(allEvals);
@@ -1661,9 +1690,10 @@ function renderEvalTable(evals) {
     const date = esc(e.evalDate || '—');
     const sub = e.submittedAt?.toDate ? e.submittedAt.toDate().toLocaleDateString() : '—';
     const lvl = e.roleLevel || PrideSkills.roleLevel(e.position);
+    const areaTag = e.area || PrideSkills.areaFor(e.position);
     const flag = PrideSkills.flaggedSkills(e.softSkills).length ? ' <span class="chip flag-chip" title="A critical soft skill was rated Improves">⚠ Critical</span>' : '';
     return `<tr>
-      <td><strong>${esc(e.tmName)}</strong><br><small style="color:var(--mid)">${esc(e.position||'')}</small>${lvl === 'leadership' ? ' <span class="chip">Leadership</span>' : ''}${flag}</td>
+      <td><strong>${esc(e.tmName)}</strong><br><small style="color:var(--mid)">${esc(e.position||'')}</small>${areaTag ? ` <span class="chip">${esc(areaTag)}</span>` : ''}${lvl === 'leadership' ? ' <span class="chip">Leadership</span>' : ''}${flag}</td>
       <td>${esc(e.outlet||'—')}</td>
       <td><span class="period-pill">${esc(e.period)}-Day</span></td>
       <td>${date}</td>
@@ -1688,6 +1718,7 @@ function openDetail(id) {
     <div class="detail-grid">
       <div class="detail-item"><label>Outlet</label><p>${esc(e.outlet||'—')}</p></div>
       <div class="detail-item"><label>Position</label><p>${esc(e.position||'—')}</p></div>
+      <div class="detail-item"><label>Area</label><p>${esc(e.area || PrideSkills.areaFor(e.position) || '—')}</p></div>
       <div class="detail-item"><label>Role Level</label><p>${(e.roleLevel || PrideSkills.roleLevel(e.position)) === 'leadership' ? 'Leadership' : (e.roleLevel || PrideSkills.roleLevel(e.position)) === 'line' ? 'Line level' : '—'}</p></div>
       <div class="detail-item"><label>Eval Date</label><p>${esc(e.evalDate||'—')}</p></div>
       <div class="detail-item"><label>Start Date</label><p>${esc(e.startDate||'—')}</p></div>

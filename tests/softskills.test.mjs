@@ -73,6 +73,30 @@ describe('roleLevel', () => {
   });
 });
 
+describe('Asst. Chef and areas (FOH / BOH)', () => {
+  it('Asst. Chef is a leadership position', () => {
+    assert.equal(S.roleLevel('Asst. Chef'), 'leadership');
+    assert.ok(S.positionsByLevel().leadership.includes('Asst. Chef'));
+  });
+  it('kitchen positions are BOH', () => {
+    ['Line Cook', 'Prep Cook', 'Dishwasher', 'Sous Chef', 'Asst. Chef', 'Chef'].forEach(p =>
+      assert.equal(S.areaFor(p), 'BOH', p));
+  });
+  it('floor and bar positions are FOH', () => {
+    ['Food Server', 'Server Assistant / Busser', 'Host / Hostess', 'Food Runner', 'Bartender', 'Barback', 'Cashier'].forEach(p =>
+      assert.equal(S.areaFor(p), 'FOH', p));
+  });
+  it('positions that could be either side return null so the evaluator chooses', () => {
+    ['Lead (any area)', 'Supervisor', 'Assistant Manager', 'Manager', 'Director', 'Other (line level)', 'Other (leadership)'].forEach(p =>
+      assert.equal(S.areaFor(p), null, p));
+  });
+  it('is case-insensitive and null for empty or unknown positions', () => {
+    assert.equal(S.areaFor('  asst. chef '), 'BOH');
+    assert.equal(S.areaFor(''), null);
+    assert.equal(S.areaFor('Astronaut'), null);
+  });
+});
+
 describe('critical skills', () => {
   const skills = S.skillsFor(60, 'line').skills;
   it('lists critical skills that have no rating', () => {
