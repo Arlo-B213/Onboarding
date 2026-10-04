@@ -4,6 +4,23 @@ const PrideContrib = (() => {
   const COMPETENCIES = ['Pride', 'Passion', 'Professionalism'];
   const MAX_NOTE = 5000;
 
+  // Evaluation sections that can take leader notes. 'general' is the box at the bottom (the only one
+  // that also takes ratings) and is what notes saved before sections existed count as.
+  const GENERAL = 'general';
+  const SECTIONS = [
+    { id: 'info', label: 'Team Member Information' },
+    { id: 'classes', label: 'Classes / Training Modules' },
+    { id: 'soft_skills', label: 'Soft Skills' },
+    { id: 'competencies', label: 'Competency Ratings' },
+    { id: 'policies', label: 'Policies Reviewed' },
+    { id: 'expectations', label: 'Expectations for Next Period' },
+    { id: 'observations', label: 'Trainer Observations' },
+    { id: 'signatures', label: 'Signatures' },
+  ];
+  const isSection = id => SECTIONS.some(s => s.id === id);
+  const normalizeSection = id => (isSection(id) ? id : GENERAL);
+  const sectionLabel = id => (SECTIONS.find(s => s.id === id) || { label: 'General' }).label;
+
   const actorName = user => (user.displayName || user.email).slice(0, 200);
 
   function escapeHtml(s) {
@@ -32,9 +49,10 @@ const PrideContrib = (() => {
     return parts.length ? parts.join(', ') : 'none';
   }
 
-  function validateInput({ note, ratings }) {
+  function validateInput({ note, ratings, section }) {
     const text = (note || '').trim();
     if (text.length > MAX_NOTE) return `Note must be ${MAX_NOTE} characters or fewer.`;
+    if (isSection(section)) return text ? null : 'Write a note first.';
     if (!text && !normalizeRatings(ratings)) return 'Add a note or rate at least one competency.';
     return null;
   }
@@ -48,18 +66,19 @@ const PrideContrib = (() => {
     };
   }
 
-  function buildAdd({ user, contributionId, note, ratings, ts }) {
+  function buildAdd({ user, contributionId, note, ratings, section, ts }) {
+    const sec = normalizeSection(section);
     const n = (note || '').trim();
-    const r = normalizeRatings(ratings);
+    const r = sec === GENERAL ? normalizeRatings(ratings) : null; // section notes are text only
     return {
       contribution: {
         authorEmail: user.email, authorName: actorName(user), note: n, ratings: r,
-        createdAt: ts, updatedAt: ts, rev: 1, retracted: false,
+        createdAt: ts, updatedAt: ts, rev: 1, retracted: false, section: sec,
       },
       activityId: `${contributionId}_1`,
       activity: {
         type: 'added', contributionId, rev: 1, byEmail: user.email, byName: actorName(user), at: ts,
-        before: null, after: { note: n, ratings: r },
+        before: null, after: { note: n, ratings: r }, section: sec,
       },
     };
   }
@@ -73,7 +92,7 @@ const PrideContrib = (() => {
       activityId: `${existing.id}_${rev}`,
       activity: {
         type: 'edited', contributionId: existing.id, rev, byEmail: user.email, byName: actorName(user), at: ts,
-        before: snapshot(existing), after: { note: n, ratings: r },
+        before: snapshot(existing), after: { note: n, ratings: r }, section: normalizeSection(existing.section),
       },
     };
   }
@@ -85,34 +104,39 @@ const PrideContrib = (() => {
       activityId: `${existing.id}_${rev}`,
       activity: {
         type: 'retracted', contributionId: existing.id, rev, byEmail: user.email, byName: actorName(user), at: ts,
-        before: snapshot(existing), after: snapshot(existing),
+        before: snapshot(existing), after: snapshot(existing), section: normalizeSection(existing.section),
       },
     };
   }
 
   // Human-readable summary of one activity entry; `lines` are plain text (escape before rendering)
   function describeActivity(e) {
+    const sec = normalizeSection(e.section);
+    const on = sec === GENERAL ? '' : ` on ${sectionLabel(sec)}`;
     switch (e.type) {
       case 'submitted':
         return { label: 'submitted the evaluation', lines: [] };
       case 'added':
-        return { label: 'added input', lines: [`Note: ${e.after.note || '(none)'}`, `Ratings: ${ratingText(e.after.ratings)}`] };
+        return {
+          label: sec === GENERAL ? 'added input' : `added a note${on}`,
+          lines: sec === GENERAL ? [`Note: ${e.after.note || '(none)'}`, `Ratings: ${ratingText(e.after.ratings)}`] : [`Note: ${e.after.note || '(none)'}`],
+        };
       case 'edited': {
         const lines = [];
         if (e.before.note !== e.after.note) lines.push(`Note: "${e.before.note}" → "${e.after.note}"`);
         if (ratingText(e.before.ratings) !== ratingText(e.after.ratings)) {
           lines.push(`Ratings: ${ratingText(e.before.ratings)} → ${ratingText(e.after.ratings)}`);
         }
-        return { label: 'edited their input', lines };
+        return { label: sec === GENERAL ? 'edited their input' : `edited their note${on}`, lines };
       }
       case 'retracted':
-        return { label: 'retracted their input', lines: [`Was: ${e.before.note || ratingText(e.before.ratings)}`] };
+        return { label: sec === GENERAL ? 'retracted their input' : `retracted their note${on}`, lines: [`Was: ${e.before.note || ratingText(e.before.ratings)}`] };
       default:
         return { label: String(e.type), lines: [] };
     }
   }
 
-  return { COMPETENCIES, MAX_NOTE, escapeHtml, normalizeRatings, ratingText, validateInput,
+  return { COMPETENCIES, MAX_NOTE, GENERAL, SECTIONS, sectionLabel, normalizeSection, escapeHtml, normalizeRatings, ratingText, validateInput,
            buildSubmitted, buildAdd, buildEdit, buildRetract, describeActivity };
 })();
 

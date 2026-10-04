@@ -172,3 +172,74 @@ describe('contributions: retract', () => {
     await assertFails(changeContribution(dbAs(env, LEADER_A), { rev: 3, retract: false, before: FIRST, after: FIRST }));
   });
 });
+
+describe('contributions: sections', () => {
+  const sectioned = (section, extra = {}) => ({ contribOver: { section, ...extra.contrib }, logOver: { section, ...extra.log } });
+
+  it('accepts a note scoped to a section when its log entry carries the same section', async () => {
+    await assertSucceeds(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, ...sectioned('soft_skills') }));
+  });
+  it('accepts every allowed section name', async () => {
+    const names = ['general', 'info', 'classes', 'soft_skills', 'competencies', 'policies', 'expectations', 'observations', 'signatures'];
+    for (const [i, name] of names.entries()) {
+      await assertSucceeds(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, cid: `s${i}`, ...sectioned(name) }));
+    }
+  });
+  it('rejects an unknown section', async () => {
+    await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, ...sectioned('bogus') }));
+  });
+  it('rejects a section that is not a string', async () => {
+    await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, ...sectioned(7) }));
+  });
+  it('rejects a log entry whose section differs from the note', async () => {
+    await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, contribOver: { section: 'classes' }, logOver: { section: 'policies' } }));
+  });
+  it('rejects a log entry that leaves the section out when the note has one', async () => {
+    await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, contribOver: { section: 'classes' } }));
+  });
+  it('rejects a log entry that names a section when the note has none', async () => {
+    await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, logOver: { section: 'classes' } }));
+  });
+
+  describe('editing a sectioned note', () => {
+    beforeEach(async () => { await seedContribution(env, { by: LEADER_A, note: 'first', ...sectioned('classes') }); });
+    const FIRST = { note: 'first', ratings: null };
+    const SECOND = { note: 'second', ratings: null };
+
+    it('works when the log entry repeats the section', async () => {
+      await assertSucceeds(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: SECOND, logOver: { section: 'classes' } }));
+    });
+    it('can be retracted with the section on the log entry', async () => {
+      await assertSucceeds(changeContribution(dbAs(env, LEADER_A), { retract: true, before: FIRST, after: FIRST, logOver: { section: 'classes' } }));
+    });
+    it('cannot move the note to another section', async () => {
+      await assertFails(changeContribution(dbAs(env, LEADER_A), {
+        before: FIRST, after: SECOND, contribOver: { section: 'policies' }, logOver: { section: 'policies' },
+      }));
+    });
+    it('cannot be edited with a log entry that names a different section', async () => {
+      await assertFails(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: SECOND, logOver: { section: 'policies' } }));
+    });
+    it('cannot be edited with a log entry that leaves the section out', async () => {
+      await assertFails(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: SECOND }));
+    });
+  });
+
+  describe('notes saved before sections existed', () => {
+    beforeEach(async () => { await seedContribution(env, { by: LEADER_A, note: 'first' }); });
+    const FIRST = { note: 'first', ratings: null };
+    const SECOND = { note: 'second', ratings: null };
+
+    it('can still be edited with no section on the log entry', async () => {
+      await assertSucceeds(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: SECOND }));
+    });
+    it('can be edited with a general section on the log entry', async () => {
+      await assertSucceeds(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: SECOND, logOver: { section: 'general' } }));
+    });
+    it('cannot be given a section on edit', async () => {
+      await assertFails(changeContribution(dbAs(env, LEADER_A), {
+        before: FIRST, after: SECOND, contribOver: { section: 'classes' }, logOver: { section: 'classes' },
+      }));
+    });
+  });
+});

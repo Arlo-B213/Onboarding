@@ -24,6 +24,11 @@ service cloud.firestore {
     }
 
     // ── contributions ──
+    // `section` says which part of the evaluation a note is about. It is optional: notes saved
+    // before sections existed have none and count as 'general'.
+    function validSection(v) {
+      return v in ['general', 'info', 'classes', 'soft_skills', 'competencies', 'policies', 'expectations', 'observations', 'signatures'];
+    }
     function validRating(v) { return v == null || v in [1, 2, 3]; }
     function validRatings(r) {
       return r == null || (r is map
@@ -39,7 +44,8 @@ service cloud.firestore {
     }
     function validContribution(d) {
       return d.keys().hasAll(['authorEmail', 'authorName', 'note', 'ratings', 'createdAt', 'updatedAt', 'rev', 'retracted'])
-        && d.keys().hasOnly(['authorEmail', 'authorName', 'note', 'ratings', 'createdAt', 'updatedAt', 'rev', 'retracted'])
+        && d.keys().hasOnly(['authorEmail', 'authorName', 'note', 'ratings', 'createdAt', 'updatedAt', 'rev', 'retracted', 'section'])
+        && (!('section' in d) || validSection(d.section))
         && d.authorEmail is string
         && d.authorName is string && d.authorName.size() <= 200
         && d.note is string && d.note.size() <= 5000
@@ -52,7 +58,8 @@ service cloud.firestore {
     // ── activity log entries ──
     function validActivity(d) {
       return d.keys().hasAll(['type', 'contributionId', 'rev', 'byEmail', 'byName', 'at', 'before', 'after'])
-        && d.keys().hasOnly(['type', 'contributionId', 'rev', 'byEmail', 'byName', 'at', 'before', 'after'])
+        && d.keys().hasOnly(['type', 'contributionId', 'rev', 'byEmail', 'byName', 'at', 'before', 'after', 'section'])
+        && (!('section' in d) || validSection(d.section))
         && d.type in ['submitted', 'added', 'edited', 'retracted']
         && d.byEmail == request.auth.token.email
         && d.byName is string && d.byName.size() <= 200
@@ -77,6 +84,7 @@ service cloud.firestore {
         && existsAfter(contribPath(evalId, d.contributionId))
         && getAfter(contribPath(evalId, d.contributionId)).data.rev == d.rev
         && getAfter(contribPath(evalId, d.contributionId)).data.authorEmail == d.byEmail
+        && d.get('section', 'general') == getAfter(contribPath(evalId, d.contributionId)).data.get('section', 'general')
         && getAfter(contribPath(evalId, d.contributionId)).data.retracted == (d.type == 'retracted')
         && d.after is map
         && d.after.keys().hasAll(['note', 'ratings'])
@@ -122,6 +130,7 @@ service cloud.firestore {
           && validContribution(request.resource.data)
           && request.resource.data.authorEmail == resource.data.authorEmail
           && request.resource.data.authorName == resource.data.authorName
+          && request.resource.data.get('section', 'general') == resource.data.get('section', 'general')
           && request.resource.data.createdAt == resource.data.createdAt
           && request.resource.data.rev == resource.data.rev + 1
           && request.resource.data.updatedAt == request.time

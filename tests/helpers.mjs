@@ -79,10 +79,11 @@ export async function seedEvaluation(env, { id = 'e1', by = LEADER_A, withLog = 
   });
 }
 
-export async function seedContribution(env, { evalId = 'e1', cid = 'c1', by = LEADER_A, note = 'first', ratings = null } = {}) {
+export async function seedContribution(env, { evalId = 'e1', cid = 'c1', by = LEADER_A, note = 'first', ratings = null,
+  contribOver = {}, logOver = {} } = {}) {
   await env.withSecurityRulesDisabled(async c => {
     const db = c.firestore();
-    await setDoc(doc(db, 'evaluations', evalId, 'contributions', cid), contribDoc({ by, note, ratings }));
-    await setDoc(doc(db, 'evaluations', evalId, 'activity', `${cid}_1`), addedLog({ cid, by, note, ratings }));
+    await setDoc(doc(db, 'evaluations', evalId, 'contributions', cid), contribDoc({ by, note, ratings, over: contribOver }));
+    await setDoc(doc(db, 'evaluations', evalId, 'activity', `${cid}_1`), addedLog({ cid, by, note, ratings, over: logOver }));
   });
 }

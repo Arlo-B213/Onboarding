@@ -48,12 +48,13 @@ describe('builders', () => {
     assert.deepEqual(r.contribution, {
       authorEmail: 'a@pechanga.com', authorName: 'Alex', note: 'hi',
       ratings: { Pride: 2, Passion: null, Professionalism: null },
-      createdAt: TS, updatedAt: TS, rev: 1, retracted: false,
+      createdAt: TS, updatedAt: TS, rev: 1, retracted: false, section: 'general',
     });
     assert.equal(r.activityId, 'c1_1');
     assert.deepEqual(r.activity, {
       type: 'added', contributionId: 'c1', rev: 1, byEmail: 'a@pechanga.com', byName: 'Alex', at: TS,
       before: null, after: { note: 'hi', ratings: { Pride: 2, Passion: null, Professionalism: null } },
+      section: 'general',
     });
   });
   it('falls back to the email when there is no display name', () => {
@@ -108,6 +109,61 @@ describe('describeActivity', () => {
     const d = P.describeActivity({ ...base, type: 'retracted', before: { note: 'oops', ratings: null }, after: { note: 'oops', ratings: null } });
     assert.equal(d.label, 'retracted their input');
     assert.deepEqual(d.lines, ['Was: oops']);
+  });
+});
+
+describe('sections', () => {
+  const ids = P.SECTIONS.map(x => x.id);
+  it('lists the evaluation sections that can take notes', () => {
+    assert.deepEqual(ids, ['info', 'classes', 'soft_skills', 'competencies', 'policies', 'expectations', 'observations', 'signatures']);
+  });
+  it('labels sections and falls back to General', () => {
+    assert.equal(P.sectionLabel('soft_skills'), 'Soft Skills');
+    assert.equal(P.sectionLabel('general'), 'General');
+    assert.equal(P.sectionLabel(undefined), 'General');
+    assert.equal(P.sectionLabel('nope'), 'General');
+  });
+  it('buildAdd stores the section on the note and on its log entry, as a text-only note', () => {
+    const r = P.buildAdd({ user, contributionId: 'c2', note: ' Great ', ratings: { Pride: '3' }, section: 'classes', ts: TS });
+    assert.equal(r.contribution.section, 'classes');
+    assert.equal(r.activity.section, 'classes');
+    assert.equal(r.contribution.ratings, null, 'section notes never carry ratings');
+    assert.deepEqual(r.activity.after, { note: 'Great', ratings: null });
+  });
+  it('an unknown section is stored as general', () => {
+    const r = P.buildAdd({ user, contributionId: 'c3', note: 'x', ratings: null, section: 'bogus', ts: TS });
+    assert.equal(r.contribution.section, 'general');
+  });
+  it('edit and retract log entries carry the note section; the update never changes it', () => {
+    const existing = { id: 'c1', rev: 1, note: 'old', ratings: null, section: 'policies' };
+    const e = P.buildEdit({ user, existing, note: 'new', ratings: null, ts: TS });
+    assert.equal(e.activity.section, 'policies');
+    assert.ok(!('section' in e.update));
+    const r = P.buildRetract({ user, existing, ts: TS });
+    assert.equal(r.activity.section, 'policies');
+    assert.ok(!('section' in r.update));
+  });
+  it('notes saved before sections existed log as general', () => {
+    const legacy = { id: 'c0', rev: 1, note: 'old', ratings: null };
+    assert.equal(P.buildEdit({ user, existing: legacy, note: 'n', ratings: null, ts: TS }).activity.section, 'general');
+    assert.equal(P.buildRetract({ user, existing: legacy, ts: TS }).activity.section, 'general');
+  });
+  it('a section note needs text; general still accepts ratings alone', () => {
+    assert.ok(P.validateInput({ note: '  ', ratings: { Pride: '3' }, section: 'info' }));
+    assert.equal(P.validateInput({ note: 'ok', ratings: null, section: 'info' }), null);
+    assert.equal(P.validateInput({ note: '', ratings: { Pride: '3' }, section: 'general' }), null);
+    assert.equal(P.validateInput({ note: '', ratings: { Pride: '3' } }), null);
+  });
+  it('describeActivity says which section a note is on', () => {
+    const base = { byName: 'Alex', contributionId: 'c1', section: 'soft_skills' };
+    assert.equal(P.describeActivity({ ...base, type: 'added', after: { note: 'n', ratings: null } }).label, 'added a note on Soft Skills');
+    assert.equal(P.describeActivity({ ...base, type: 'edited', before: { note: 'a', ratings: null }, after: { note: 'b', ratings: null } }).label, 'edited their note on Soft Skills');
+    assert.equal(P.describeActivity({ ...base, type: 'retracted', before: { note: 'a', ratings: null }, after: { note: 'a', ratings: null } }).label, 'retracted their note on Soft Skills');
+  });
+  it('general and legacy entries keep the original wording', () => {
+    const e = { byName: 'Alex', contributionId: 'c1', type: 'added', after: { note: 'n', ratings: null } };
+    assert.equal(P.describeActivity({ ...e, section: 'general' }).label, 'added input');
+    assert.equal(P.describeActivity(e).label, 'added input');
   });
 });
 
