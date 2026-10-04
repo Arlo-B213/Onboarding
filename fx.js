@@ -102,6 +102,46 @@ const PrideFx = (() => {
     play('tick');
   }
 
+  // ── theme ────────────────────────────────────────────────────────────
+  // Dark is the default. The choice is remembered, and an inline script in index.html applies it
+  // before first paint so there is no flash.
+  const currentTheme = () => document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  function syncTheme() {
+    const light = currentTheme() === 'light';
+    document.querySelectorAll('.theme-toggle').forEach(b => {
+      b.setAttribute('aria-pressed', String(light));
+      b.title = light ? 'Light mode. Click for dark' : 'Dark mode. Click for light';
+    });
+  }
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem('pride-theme', theme); } catch (e) { /* ignore */ }
+    syncTheme();
+  }
+  // The new theme expands in a circle from the clicked button (View Transitions API),
+  // with a plain colour fade where that is not supported.
+  function toggleTheme(ev) {
+    const next = currentTheme() === 'light' ? 'dark' : 'light';
+    play('tick');
+    if (reduced()) { applyTheme(next); return; }
+    const root = document.documentElement;
+    const btn = ev && ev.currentTarget;
+    const r = btn ? btn.getBoundingClientRect() : { left: window.innerWidth / 2, top: 0, width: 0, height: 0 };
+    const x = r.left + r.width / 2, y = r.top + r.height / 2;
+    if (document.startViewTransition) {
+      const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+      const vt = document.startViewTransition(() => applyTheme(next));
+      vt.ready.then(() => root.animate(
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+        { duration: 700, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', pseudoElement: '::view-transition-new(root)' }
+      )).catch(() => { /* transition skipped, the theme still changed */ });
+    } else {
+      root.classList.add('theme-fade');
+      applyTheme(next);
+      setTimeout(() => root.classList.remove('theme-fade'), 450);
+    }
+  }
+
   // ── login ────────────────────────────────────────────────────────────
   // armLogin() is called by a real sign-in click so that a restored session on page load
   // does not play the welcome animation or sound.
@@ -234,11 +274,12 @@ const PrideFx = (() => {
 
   function init() {
     syncMute();
+    syncTheme();
     window.addEventListener('resize', () => movePill(false));
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => movePill(false));
   }
 
-  return { play, toggleMute, syncMute, armLogin, disarmLogin, consumeLogin, loginTransition,
+  return { play, toggleMute, syncMute, toggleTheme, syncTheme, armLogin, disarmLogin, consumeLogin, loginTransition,
            submitSuccess, burst, swapPanels, movePill, slideViews, init };
 })();
 

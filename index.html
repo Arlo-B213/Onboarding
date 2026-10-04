@@ -3,6 +3,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
+<script>
+// Apply the saved theme before first paint (dark is the default)
+try { var t = localStorage.getItem('pride-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
 
@@ -29,6 +33,9 @@
   --topbar-bg: rgba(15,14,12,0.86);
   --overlay: rgba(8,7,6,0.78);
   --glow: rgba(212,168,72,0.16);
+  --gold-grad: linear-gradient(180deg, var(--gold-hi), var(--gold));
+  --login-shadow: 0 28px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.35);
+  --modal-shadow: 0 30px 80px rgba(0,0,0,0.6);
   --radius: 8px;
   --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 10px 28px rgba(0,0,0,0.35);
   --focus: 0 0 0 3px rgba(212,168,72,0.38);
@@ -38,27 +45,31 @@
   color-scheme: dark;
 }
 :root[data-theme="light"] {
-  --bg: #EDEAE3;
-  --surface: #FAFAF8;
-  --surface-2: #F1EEE6;
-  --surface-3: #DDD9D0;
-  --line: #C8C0B2;
-  --line-gold: rgba(154,111,32,0.4);
-  --text: #1C1916;
-  --text-2: #3D3630;
-  --muted: #6B6057;
+  --bg: #F5F1E8;
+  --surface: #FFFDF8;
+  --surface-2: #F7F2E7;
+  --surface-3: #EDE5D2;
+  --line: #D3C7AE;
+  --line-gold: rgba(143,100,25,0.38);
+  --text: #1F1B16;
+  --text-2: #413A31;
+  --muted: #6E6357;
   --gold: #8F6419;
-  --gold-hi: #7F5A14;
-  --gold-soft: rgba(154,111,32,0.1);
+  --gold-hi: #7A5412;
+  --gold-soft: rgba(143,100,25,0.09);
   --on-gold: #FFFFFF;
   --danger: #B03A2E;
   --success: #2D6A4F;
-  --input-bg: #EDEAE3;
-  --placeholder: #8A8075;
-  --topbar-bg: rgba(250,250,248,0.9);
-  --overlay: rgba(28,25,22,0.7);
-  --glow: rgba(154,111,32,0.12);
-  --shadow: 0 2px 8px rgba(28,25,22,0.10);
+  --input-bg: #FBF8F0;
+  --placeholder: #766B5E;
+  --topbar-bg: rgba(255,253,248,0.88);
+  --overlay: rgba(40,32,20,0.55);
+  --glow: rgba(176,128,32,0.2);
+  --gold-grad: linear-gradient(180deg, #9A6C1A, #83571A);
+  --login-shadow: 0 24px 60px rgba(90,65,20,0.2), 0 0 0 1px rgba(90,65,20,0.06);
+  --modal-shadow: 0 28px 70px rgba(60,40,10,0.3);
+  --shadow: 0 1px 0 rgba(255,255,255,0.8) inset, 0 8px 24px rgba(90,65,20,0.1);
+  --focus: 0 0 0 3px rgba(143,100,25,0.3);
   color-scheme: light;
 }
 
@@ -84,7 +95,7 @@ body {
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
   border: 1px solid var(--line-gold); border-radius: 16px;
   padding: 46px 38px 40px; width: 100%; max-width: 420px;
-  box-shadow: 0 28px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.35);
+  box-shadow: var(--login-shadow);
 }
 .login-logo { text-align: center; margin-bottom: 32px; }
 .login-logo .pride-text {
@@ -128,7 +139,7 @@ body {
 .btn:focus-visible { outline: none; box-shadow: var(--focus); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn-primary {
-  background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: var(--on-gold);
+  background: var(--gold-grad); color: var(--on-gold);
   box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 8px 20px -6px var(--glow);
 }
 .btn-primary:hover:not(:disabled) { filter: brightness(1.07); }
@@ -168,7 +179,7 @@ body {
 .topbar-user { display: flex; align-items: center; gap: 12px; }
 .topbar-user span { font-size: 12px; color: var(--muted); }
 .topbar-user .badge-admin {
-  background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: var(--on-gold);
+  background: var(--gold-grad); color: var(--on-gold);
   font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 1px;
 }
 
@@ -282,7 +293,7 @@ body {
 .rating-opt label:hover { background: var(--surface-3); }
 .rating-opt label .r-num { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600; color: var(--gold-hi); }
 .rating-opt label .r-lbl { font-size: 10px; font-weight: 600; letter-spacing: 0.6px; color: var(--muted); text-transform: uppercase; }
-.rating-opt input:checked + label { background: linear-gradient(180deg, var(--gold-hi), var(--gold)); }
+.rating-opt input:checked + label { background: var(--gold-grad); }
 .rating-opt input:checked + label .r-num { color: var(--on-gold); }
 .rating-opt input:checked + label .r-lbl { color: var(--on-gold); }
 
@@ -316,7 +327,7 @@ body {
 .eval-table .period-pill {
   display: inline-block; padding: 3px 11px; border-radius: 20px;
   font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
-  background: linear-gradient(180deg, var(--gold-hi), var(--gold)); color: var(--on-gold);
+  background: var(--gold-grad); color: var(--on-gold);
 }
 
 /* ── DETAIL MODAL ── */
@@ -329,7 +340,7 @@ body {
 .modal-box {
   background: var(--surface); border: 1px solid var(--line-gold); border-radius: 16px;
   width: 100%; max-width: 780px; padding: 30px; margin: auto;
-  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  box-shadow: var(--modal-shadow);
 }
 .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; }
 .modal-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; color: var(--text); line-height: 1.15; }
@@ -537,13 +548,25 @@ body {
 .success-msg.show { animation: msg-glide 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 @keyframes msg-glide { from { opacity: 0; transform: translateY(10px); text-shadow: 0 0 18px rgba(93,187,140,0.8); } to { opacity: 1; transform: none; text-shadow: none; } }
 
+/* theme switch: the new theme expands from the button that was clicked */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 2; }
+html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after {
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease !important;
+}
+
 /* sound on/off button */
-.fx-mute {
+.fx-mute, .theme-toggle {
   display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0;
   border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s;
 }
-.fx-mute:hover { color: var(--gold-hi); border-color: var(--gold); }
-.fx-mute:focus-visible { outline: none; box-shadow: var(--focus); }
+.fx-mute:hover, .theme-toggle:hover { color: var(--gold-hi); border-color: var(--gold); }
+.fx-mute:focus-visible, .theme-toggle:focus-visible { outline: none; box-shadow: var(--focus); }
+.theme-toggle .moon { display: none; }
+:root[data-theme="light"] .theme-toggle .sun { display: none; }
+:root[data-theme="light"] .theme-toggle .moon { display: block; }
+.theme-toggle-login { position: absolute; top: 14px; left: 14px; z-index: 2; }
 .fx-mute .slash { display: none; }
 .fx-mute[data-muted="true"] .waves { display: none; }
 .fx-mute[data-muted="true"] .slash { display: block; }
@@ -560,6 +583,9 @@ body {
 <!-- ══════════════════════════════════════════ LOGIN SCREEN ══════════ -->
 <div id="screen-login" class="screen active">
   <div class="login-card">
+    <button type="button" class="theme-toggle theme-toggle-login" aria-label="Switch between dark and light mode" onclick="PrideFx.toggleTheme(event)">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="sun"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+    </button>
     <button type="button" class="fx-mute fx-mute-login" aria-label="Toggle sound" aria-pressed="false" onclick="PrideFx.toggleMute()">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor" stroke="none"/><path class="waves" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="slash" d="M16 9l5 6M21 9l-5 6"/></svg>
     </button>
@@ -612,6 +638,9 @@ body {
     <div class="topbar-user">
       <span id="topbar-name">Manager</span>
       <span id="topbar-admin-badge" class="badge-admin" hidden>ADMIN</span>
+      <button type="button" class="theme-toggle" aria-label="Switch between dark and light mode" onclick="PrideFx.toggleTheme(event)">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="sun"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </button>
       <button type="button" class="fx-mute" aria-label="Toggle sound" aria-pressed="false" onclick="PrideFx.toggleMute()">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor" stroke="none"/><path class="waves" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="slash" d="M16 9l5 6M21 9l-5 6"/></svg>
       </button>
