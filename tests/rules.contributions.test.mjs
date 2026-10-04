@@ -191,6 +191,35 @@ describe('contributions: sections', () => {
   it('rejects a section that is not a string', async () => {
     await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, ...sectioned(7) }));
   });
+  it('accepts a note about one soft skill', async () => {
+    await assertSucceeds(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, ...sectioned('skill:conflict_resolution') }));
+  });
+  it('accepts notes for a leadership skill id and an id with underscores only', async () => {
+    await assertSucceeds(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, cid: 'k1', ...sectioned('skill:emotional_intelligence') }));
+    await assertSucceeds(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, cid: 'k2', ...sectioned('skill:a') }));
+  });
+  it('rejects malformed skill sections', async () => {
+    const bad = ['skill:', 'skill:Bad Name', 'skill:../x', 'skill:a-b', 'Skill:x', 'skill:UPPER', 'skill:' + 'a'.repeat(61), 'skill:x:y'];
+    for (const [i, name] of bad.entries()) {
+      await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, cid: `bad${i}`, ...sectioned(name) }));
+    }
+  });
+  it('rejects a skill note whose log entry names a different skill', async () => {
+    await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, contribOver: { section: 'skill:teamwork' }, logOver: { section: 'skill:adaptability' } }));
+  });
+  it('a skill note cannot be moved to another skill on edit', async () => {
+    await seedContribution(env, { by: LEADER_A, note: 'first', ...sectioned('skill:teamwork') });
+    await assertFails(changeContribution(dbAs(env, LEADER_A), {
+      before: { note: 'first', ratings: null }, after: { note: 'second', ratings: null },
+      contribOver: { section: 'skill:adaptability' }, logOver: { section: 'skill:adaptability' },
+    }));
+  });
+  it('a skill note can be edited in place', async () => {
+    await seedContribution(env, { by: LEADER_A, note: 'first', ...sectioned('skill:teamwork') });
+    await assertSucceeds(changeContribution(dbAs(env, LEADER_A), {
+      before: { note: 'first', ratings: null }, after: { note: 'second', ratings: null }, logOver: { section: 'skill:teamwork' },
+    }));
+  });
   it('rejects a log entry whose section differs from the note', async () => {
     await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, contribOver: { section: 'classes' }, logOver: { section: 'policies' } }));
   });

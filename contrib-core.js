@@ -17,9 +17,21 @@ const PrideContrib = (() => {
     { id: 'observations', label: 'Trainer Observations' },
     { id: 'signatures', label: 'Signatures' },
   ];
-  const isSection = id => SECTIONS.some(s => s.id === id);
+  // A note can also be about one soft skill: section 'skill:<skill id>' (ids come from softskills.js)
+  const isSkillSection = id => typeof id === 'string' && /^skill:[a-z_]{1,60}$/.test(id);
+  const isSection = id => SECTIONS.some(s => s.id === id) || isSkillSection(id);
   const normalizeSection = id => (isSection(id) ? id : GENERAL);
-  const sectionLabel = id => (SECTIONS.find(s => s.id === id) || { label: 'General' }).label;
+
+  // Skill names come from softskills.js: a browser global, or required when running in Node
+  function skillName(skillId) {
+    let skills = null;
+    try { skills = typeof PrideSkills !== 'undefined' ? PrideSkills : (typeof require !== 'undefined' ? require('./softskills.js') : null); } catch (e) { /* not available */ }
+    const hit = skills && [...skills.SOFT_SKILLS, ...skills.LEADERSHIP_SKILLS].find(s => s.id === skillId);
+    return hit ? hit.name : null;
+  }
+  const sectionLabel = id => (isSkillSection(id)
+    ? (skillName(id.slice('skill:'.length)) || 'Soft skill')
+    : (SECTIONS.find(s => s.id === id) || { label: 'General' }).label);
 
   const actorName = user => (user.displayName || user.email).slice(0, 200);
 
@@ -136,7 +148,7 @@ const PrideContrib = (() => {
     }
   }
 
-  return { COMPETENCIES, MAX_NOTE, GENERAL, SECTIONS, sectionLabel, normalizeSection, escapeHtml, normalizeRatings, ratingText, validateInput,
+  return { COMPETENCIES, MAX_NOTE, GENERAL, SECTIONS, sectionLabel, normalizeSection, isSkillSection, escapeHtml, normalizeRatings, ratingText, validateInput,
            buildSubmitted, buildAdd, buildEdit, buildRetract, describeActivity };
 })();
 

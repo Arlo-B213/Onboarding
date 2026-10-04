@@ -167,6 +167,47 @@ describe('sections', () => {
   });
 });
 
+describe('per-skill notes', () => {
+  it('a note can be scoped to one soft skill', () => {
+    const r = P.buildAdd({ user, contributionId: 'k1', note: 'Calm under pressure', ratings: { Pride: '3' }, section: 'skill:conflict_resolution', ts: TS });
+    assert.equal(r.contribution.section, 'skill:conflict_resolution');
+    assert.equal(r.activity.section, 'skill:conflict_resolution');
+    assert.equal(r.contribution.ratings, null, 'skill notes are text only, like section notes');
+  });
+  it('malformed skill sections fall back to general', () => {
+    ['skill:', 'skill:Bad Name', 'skill:../x', 'skill:a-b', 'SKILL:x', 'skill:' + 'a'.repeat(61)].forEach(bad =>
+      assert.equal(P.normalizeSection(bad), 'general', bad));
+  });
+  it('accepts well-formed skill ids', () => {
+    assert.equal(P.normalizeSection('skill:guest_engagement'), 'skill:guest_engagement');
+    assert.equal(P.normalizeSection('skill:emotional_intelligence'), 'skill:emotional_intelligence');
+  });
+  it('labels a skill note with the skill name, and falls back for unknown ids', () => {
+    assert.equal(P.sectionLabel('skill:conflict_resolution'), 'Conflict resolution');
+    assert.equal(P.sectionLabel('skill:coaching'), 'Coaching & developing others');
+    assert.equal(P.sectionLabel('skill:not_a_real_skill'), 'Soft skill');
+  });
+  it('isSkillSection tells skill notes from other sections', () => {
+    assert.equal(P.isSkillSection('skill:teamwork'), true);
+    assert.equal(P.isSkillSection('soft_skills'), false);
+    assert.equal(P.isSkillSection('general'), false);
+  });
+  it('a skill note needs text', () => {
+    assert.ok(P.validateInput({ note: ' ', ratings: { Pride: '3' }, section: 'skill:teamwork' }));
+    assert.equal(P.validateInput({ note: 'ok', ratings: null, section: 'skill:teamwork' }), null);
+  });
+  it('the activity log names the skill', () => {
+    const e = { byName: 'Alex', contributionId: 'k1', section: 'skill:conflict_resolution' };
+    assert.equal(P.describeActivity({ ...e, type: 'added', after: { note: 'n', ratings: null } }).label, 'added a note on Conflict resolution');
+    assert.equal(P.describeActivity({ ...e, type: 'edited', before: { note: 'a', ratings: null }, after: { note: 'b', ratings: null } }).label, 'edited their note on Conflict resolution');
+  });
+  it('edit and retract log entries keep the skill', () => {
+    const existing = { id: 'k1', rev: 1, note: 'old', ratings: null, section: 'skill:teamwork' };
+    assert.equal(P.buildEdit({ user, existing, note: 'new', ratings: null, ts: TS }).activity.section, 'skill:teamwork');
+    assert.equal(P.buildRetract({ user, existing, ts: TS }).activity.section, 'skill:teamwork');
+  });
+});
+
 describe('escapeHtml', () => {
   it('escapes markup characters', () => {
     assert.equal(P.escapeHtml(`<script>alert("x")</script> & 'y'`),
