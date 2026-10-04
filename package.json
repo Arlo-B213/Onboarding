@@ -3,12 +3,14 @@
   "private": true,
   "scripts": {
     "test": "npm run test:core && npm run test:rules",
-    "test:core": "node --test tests/contrib-core.test.mjs tests/softskills.test.mjs",
+    "test:core": "node --test tests/contrib-core.test.mjs tests/softskills.test.mjs tests/signature.test.mjs tests/pdf.test.mjs",
     "test:rules": "firebase emulators:exec --only firestore --project demo-pride \"node --test --test-concurrency=1 tests/rules.*.test.mjs\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",
     "firebase": "^12.19.0",
-    "firebase-tools": "^15.32.1"
+    "firebase-tools": "^15.32.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8"
   }
 }
