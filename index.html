@@ -586,6 +586,13 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 .flag-banner { background: rgba(238,123,109,0.12); border: 1px solid rgba(238,123,109,0.4); color: var(--danger); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 8px; }
 .chip.flag-chip { background: rgba(238,123,109,0.14); color: var(--danger); border-color: rgba(238,123,109,0.4); }
 
+/* ══ SECTION NOTES ══ */
+.notes-slot:not([data-section="general"]) { margin: 10px 0 6px; padding-left: 12px; border-left: 2px solid var(--line-gold); }
+.notes-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+.notes-count { background: var(--gold-grad); color: var(--on-gold); border-radius: 20px; padding: 1px 8px; font-size: 10px; letter-spacing: 0.4px; }
+.notes-add { margin-top: 8px; }
+.notes-slot:not([data-section="general"]) .contrib-item { margin-bottom: 10px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
 }
@@ -1725,13 +1732,16 @@ function openDetail(id) {
       <div class="detail-item"><label>Submitted By</label><p>${esc(e.submittedByName||e.submittedBy||'—')}</p></div>
       <div class="detail-item"><label>Classes Completed</label><p>${classDone} / ${classTotal}</p></div>
     </div>
+    <div class="notes-slot" data-section="info"></div>
 
     <div class="detail-section">
       <h4>Classes / Training Modules</h4>
       ${Object.values(e.classes||{}).map(c=>`<span class="chip ${c.completed?'green':''}">${c.completed?'☑':'☐'} ${esc(c.label)}</span>`).join('')}
     </div>
+    <div class="notes-slot" data-section="classes"></div>
 
     ${softSkillsDetailHtml(e)}
+    <div class="notes-slot" data-section="soft_skills"></div>
 
     <div class="detail-section">
       <h4>Competency Ratings</h4>
@@ -1740,11 +1750,17 @@ function openDetail(id) {
       </div>
     </div>
 
+    <div class="notes-slot" data-section="competencies"></div>
+
     ${e.policies ? `<div class="detail-section"><h4>Policies Reviewed</h4><div class="detail-text">${esc(e.policies)}</div></div>` : ''}
+    <div class="notes-slot" data-section="policies"></div>
     ${e.expectations ? `<div class="detail-section"><h4>Expectations for Next Period</h4><div class="detail-text">${esc(e.expectations)}</div></div>` : ''}
+    <div class="notes-slot" data-section="expectations"></div>
     ${e.strengths ? `<div class="detail-section"><h4>Strengths & Highlights</h4><div class="detail-text">${esc(e.strengths)}</div></div>` : ''}
     ${e.improvements ? `<div class="detail-section"><h4>Areas for Improvement</h4><div class="detail-text">${esc(e.improvements)}</div></div>` : ''}
     ${e.trainerNotes ? `<div class="detail-section"><h4>Trainer Notes</h4><div class="detail-text">${esc(e.trainerNotes)}</div></div>` : ''}
+
+    <div class="notes-slot" data-section="observations"></div>
 
     <div class="detail-section">
       <h4>Signatures</h4>
@@ -1756,7 +1772,9 @@ function openDetail(id) {
       </div>
     </div>
 
-    <div id="contrib-section"></div>
+    <div class="notes-slot" data-section="signatures"></div>
+
+    <div id="contrib-section" class="notes-slot" data-section="general"></div>
   `;
   document.getElementById('detail-modal').classList.add('open');
   initContributions(id);
