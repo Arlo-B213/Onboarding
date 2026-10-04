@@ -1189,6 +1189,7 @@ function switchTab(tab, { instant = false } = {}) {
     TAB_ORDER.forEach(t => { if (t !== tab && t !== currentTab) document.getElementById(panels[t]).hidden = true; });
     if (currentTab !== tab) {
       const dir = TAB_ORDER.indexOf(tab) > TAB_ORDER.indexOf(currentTab) ? 1 : -1;
+      PrideFx.play(dir > 0 ? 'slideForward' : 'slideBack');
       PrideFx.swapPanels(document.getElementById(panels[currentTab]), document.getElementById(panels[tab]), dir);
     }
     PrideFx.movePill(true);

@@ -1,5 +1,5 @@
 /* Visual and sound effects for the PRIDE Training Log. Loaded as the global `PrideFx`.
-   - The only sound is a swoosh when the login card slides to Forgot password and back. It is
+   - The only sound is a swoosh: when the login card slides to Forgot password and back, and when moving between tabs. It is
      synthesized with the Web Audio API (no audio files) and only ever plays after a click, which is
      what browsers require.
    - Everything visual is skipped when the device asks for reduced motion.
