@@ -103,10 +103,10 @@ const PridePdf = (() => {
         ['Submitted by', e.submittedByName || e.submittedBy || '—'], ['Submitted on', fmtDateTime(e.submittedAt)],
       ],
       flagged: S.flaggedSkills(e.softSkills),
-      classes: Object.values(e.classes || {}).map(c => ({ label: c.label, completed: !!c.completed })),
       skills: { all: rows('all'), leadership: rows('leadership') },
       competencies: Object.entries(e.competencies || {}).map(([name, rating]) => ({
         name, rating: rating || null, label: ({ 3: 'Exceeds expectations', 2: 'Meets expectations', 1: 'Needs improvement' })[rating] || 'Not rated',
+        comment: String((e.competencyComments || {})[name] || '').trim(),
       })),
       texts: {
         policies: e.policies || '', expectations: e.expectations || '',
@@ -228,23 +228,6 @@ const PridePdf = (() => {
       return list.length ? notesBlock(list, yy) + 4 : yy;
     };
 
-    // classes
-    if (m.classes.length) {
-      y = heading('Classes / Training Modules', y);
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
-      m.classes.forEach((c, i) => {
-        const col = i % 2, x = PAGE.m + col * (CW / 2);
-        if (col === 0) y = ensure(y, 18);
-        color('draw', c.completed ? COL.success : COL.muted); doc.setLineWidth(0.9); doc.rect(x, y - 8, 9, 9);
-        if (c.completed) { color('draw', COL.success); doc.setLineWidth(1.4); doc.lines([[2.4, 2.6], [4.8, -6]], x + 1.8, y - 3.2); }
-        color('text', COL.ink); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
-        text(doc.splitTextToSize(T(c.label), CW / 2 - 22)[0], x + 15, y);
-        if (col === 1 || i === m.classes.length - 1) y += 16;
-      });
-      y += 4;
-    }
-    y = sectionNotes('classes', y) + 6;
-
     // soft skills
     const skillTable = (rows, startY) => {
       const body = [];
@@ -291,6 +274,13 @@ const PridePdf = (() => {
         text(c.label, x + bw / 2, y + 52, { align: 'center' });
       });
       y += 72;
+      // why a 3 or a 1 was given
+      m.competencies.filter(c => c.comment).forEach(c => {
+        y = ensure(y, 44);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); color('text', COL.gold);
+        text(`${c.name.toUpperCase()}  ·  ${c.rating} (${c.label.toUpperCase()})`, PAGE.m, y, { charSpace: 0.6 });
+        y = paragraph(c.comment, y + 12) + 6;
+      });
     }
     y = sectionNotes('competencies', y) + 6;
 

@@ -18,20 +18,20 @@ const evaluation = (over = {}) => ({
   startDate: '2026-08-01', evalDate: '2026-10-03', period: 60,
   submittedByName: 'Leader One', submittedBy: 'leader1@test.com',
   submittedAt: { toDate: () => new Date('2026-10-03T20:00:00Z') },
-  classes: { a: { label: 'PRIDE Training Graduation Review', completed: true }, b: { label: 'Career Development & Goals', completed: false } },
   softSkills: {
     guest_engagement: { name: 'Guest engagement & hospitality mindset', group: 'all', critical: true, rating: 1, note: 'Avoids eye contact' },
     teamwork: { name: 'Teamwork & collaboration', group: 'all', critical: false, rating: 3, note: '' },
     coaching: { name: 'Coaching & developing others', group: 'leadership', critical: false, rating: 2, note: 'Weekly 1:1s' },
   },
   competencies: { Pride: 3, Passion: 2, Professionalism: 2 },
+  competencyComments: { Pride: 'Led the whole shift when two people called out' },
   policies: 'Cash handling and the 5/10 rule.', expectations: 'Lead a section.', strengths: 'Warm.', improvements: 'Speed.', trainerNotes: '',
   trainerName: 'Leader One', trainerSigImg: PNG, trainerSignedAt: '2026-10-03T20:00:00.000Z',
   tmSigImg: '', tmSig: 'Taylor Soft', managerSig: 'Pat Manager',
   ...over,
 });
 const note = (over = {}) => ({
-  id: 'n1', section: 'classes', authorName: 'Leader Two', authorEmail: 'leader2@test.com',
+  id: 'n1', section: 'policies', authorName: 'Leader Two', authorEmail: 'leader2@test.com',
   createdAt: { toDate: () => new Date('2026-10-03T21:00:00Z') }, note: 'Thorough review', ratings: null, retracted: false, rev: 1, ...over,
 });
 
@@ -73,6 +73,18 @@ describe('model', () => {
     assert.equal(d['Evaluation date'], 'Oct 3, 2026');
     assert.equal(m.title, '60-Day Evaluation');
   });
+  it('no longer has a classes section', () => {
+    assert.ok(!('classes' in P.model(evaluation(), [], NOW)));
+  });
+  it('carries the comment explaining a 3 or a 1 on each competency', () => {
+    const m = P.model(evaluation(), [], NOW);
+    assert.equal(m.competencies[0].comment, 'Led the whole shift when two people called out');
+    assert.deepEqual(m.competencies.slice(1).map(c => c.comment), ['', '']);
+  });
+  it('copes with older evaluations that have no competency comments', () => {
+    const m = P.model(evaluation({ competencyComments: undefined }), [], NOW);
+    assert.deepEqual(m.competencies.map(c => c.comment), ['', '', '']);
+  });
   it('derives the area from the position for evaluations saved without one', () => {
     const d = Object.fromEntries(P.model(evaluation({ area: '' }), [], NOW).details);
     assert.equal(d['Area'], 'BOH');
@@ -93,7 +105,7 @@ describe('model', () => {
   });
   it('puts section notes under their section and legacy notes under general', () => {
     const m = P.model(evaluation(), [note(), note({ id: 'n2', section: undefined, note: 'Overall great' }), note({ id: 'n3', section: 'bogus', note: 'Odd' })], NOW);
-    assert.deepEqual(m.sectionNotes.classes.map(n => n.text), ['Thorough review']);
+    assert.deepEqual(m.sectionNotes.policies.map(n => n.text), ['Thorough review']);
     assert.deepEqual(m.sectionNotes.general.map(n => n.text), ['Overall great', 'Odd']);
   });
   it('attaches skill notes to their skill row', () => {
@@ -108,7 +120,7 @@ describe('model', () => {
   });
   it('leaves retracted notes out and includes the author and ratings text', () => {
     const m = P.model(evaluation(), [note({ retracted: true }), note({ id: 'g', section: 'general', ratings: { Pride: 3, Passion: null, Professionalism: null } })], NOW);
-    assert.equal((m.sectionNotes.classes || []).length, 0);
+    assert.equal((m.sectionNotes.policies || []).length, 0);
     assert.equal(m.sectionNotes.general[0].author, 'Leader Two');
     assert.equal(m.sectionNotes.general[0].ratingsText, 'Pride 3');
   });

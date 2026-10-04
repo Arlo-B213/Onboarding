@@ -49,7 +49,7 @@ const by = 'leader1@test.com';
 await put('evaluations/sample1', {
   tmName: str('Sample Teammate'), outlet: str('Great Oak'), position: str('Food Server'),
   startDate: str('2026-09-01'), evalDate: str(new Date().toISOString().slice(0, 10)),
-  period: int(30), classes: { mapValue: { fields: {} } }, skills: { mapValue: { fields: {} } },
+  period: int(30),
   competencies: { mapValue: { fields: { Pride: int(3), Passion: int(2), Professionalism: int(2) } } },
   policies: str('Reviewed cash handling and the 5/10 rule.'), expectations: str('Lead a section independently.'),
   strengths: str('Warm with guests.'), improvements: str('Speed during rushes.'), trainerNotes: str(''),

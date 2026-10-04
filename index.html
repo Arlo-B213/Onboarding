@@ -248,19 +248,6 @@ body {
 .period-card .day-num { font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 600; color: var(--gold-hi); line-height: 1; }
 .period-card .day-lbl { font-size: 11px; font-weight: 600; letter-spacing: 1.4px; color: var(--muted); text-transform: uppercase; margin-top: 6px; }
 
-/* ── CHECKLIST ── */
-.checklist { display: grid; gap: 6px; }
-.check-item {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 10px 12px; border-radius: 8px; cursor: pointer;
-  border: 1px solid transparent; transition: all 0.12s;
-}
-.check-item:hover { background: var(--surface-2); }
-.check-item input[type="checkbox"] { width: 17px; height: 17px; margin-top: 2px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }
-.check-item .check-label { font-size: 13px; color: var(--text); }
-.check-item .check-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
-.check-item.checked { background: var(--gold-soft); border-color: var(--line-gold); }
-
 /* ── RATING BUTTONS ── */
 .rating-group { display: flex; gap: 1px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
 .rating-opt { flex: 1; }
@@ -624,6 +611,20 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 .sig-view-meta { font-size: 11px; color: var(--muted); letter-spacing: 0.3px; }
 .modal-actions { display: flex; align-items: center; gap: 10px; }
 
+/* ══ COMPETENCY COMMENTS ══ */
+.comp-why { margin-top: 10px; }
+.comp-why label { display: block; margin-bottom: 5px; font-size: 11px; font-weight: 600; letter-spacing: 0.6px; color: var(--gold-hi); }
+.comp-why textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--line-gold); border-radius: 6px; resize: vertical;
+  background: var(--input-bg); color: var(--text); font-family: inherit; font-size: 13px;
+}
+.comp-why textarea:focus { outline: none; border-color: var(--gold); box-shadow: var(--focus); }
+.comp-why textarea::placeholder { color: var(--placeholder); }
+.comp-comments { display: grid; gap: 8px; margin-top: 10px; }
+.comp-comment { padding: 10px 14px; background: var(--surface-2); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; }
+.comp-comment-head { font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--gold-hi); }
+.comp-comment-text { margin-top: 4px; font-size: 13px; color: var(--text-2); white-space: pre-wrap; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
 }
@@ -791,21 +792,10 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
       <!-- Sections that show after period is selected -->
       <div id="period-sections" hidden>
 
-        <!-- Section A: Classes -->
-        <div class="section-card">
-          <div class="section-header">
-            <span class="section-badge">A</span>
-            <span class="section-title">Class / Training Module Documentation</span>
-          </div>
-          <div class="section-body">
-            <div id="classes-list" class="checklist"></div>
-          </div>
-        </div>
-
         <!-- Section B: Soft Skills -->
         <div class="section-card">
           <div class="section-header">
-            <span class="section-badge">B</span>
+            <span class="section-badge">A</span>
             <span class="section-title">Soft Skills</span>
           </div>
           <div class="section-body">
@@ -823,7 +813,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
         <!-- Section C: Policies -->
         <div class="section-card">
           <div class="section-header">
-            <span class="section-badge">C</span>
+            <span class="section-badge">B</span>
             <span class="section-title">Policies & Procedures Reviewed In Person with Trainer</span>
           </div>
           <div class="section-body">
@@ -837,7 +827,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
         <!-- Section D: Expectations -->
         <div class="section-card">
           <div class="section-header">
-            <span class="section-badge">D</span>
+            <span class="section-badge">C</span>
             <span class="section-title">Expectations for Next Period</span>
           </div>
           <div class="section-body">
@@ -851,7 +841,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
         <!-- Section E: Competency Ratings -->
         <div class="section-card">
           <div class="section-header">
-            <span class="section-badge">E</span>
+            <span class="section-badge">D</span>
             <span class="section-title">Competency Ratings</span>
           </div>
           <div class="section-body">
@@ -867,7 +857,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
         <!-- Section F: Comments -->
         <div class="section-card">
           <div class="section-header">
-            <span class="section-badge">F</span>
+            <span class="section-badge">E</span>
             <span class="section-title">Trainer Observations</span>
           </div>
           <div class="section-body">
@@ -889,7 +879,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
         <!-- Section G: Signatures -->
         <div class="section-card">
           <div class="section-header">
-            <span class="section-badge">G</span>
+            <span class="section-badge">F</span>
             <span class="section-title">Signatures & Acknowledgment</span>
           </div>
           <div class="section-body">
@@ -1076,45 +1066,15 @@ const EMAILJS_PUBLIC_KEY  = "nMaBuBhlVwA82QJXU";
 // ══════════════════════════════════════════════════════════════════════
 const PERIOD_DATA = {
   14: {
-    classes: [
-      { id: "orientation", label: "New Team Member Orientation", sub: "HR onboarding & property tour" },
-      { id: "food_safety_intro", label: "Food Safety & Handling — Introduction", sub: "ServSafe basics, allergens, cross-contamination" },
-      { id: "pos_training", label: "POS System Training", sub: "InfoGenesis ordering and payment processing" },
-      { id: "menu_basics", label: "Menu Knowledge — Basics", sub: "Menu overview, descriptions, modifiers" },
-      { id: "pride_standards", label: "PRIDE Service Standards Overview", sub: "Pechanga service philosophy and expectations" },
-      { id: "team_comms", label: "Team Communications", sub: "Communication board, policy board, pre-shift board locations" },
-      { id: "uniforms_grooming", label: "Uniforms & Grooming Standards", sub: "Dress code, appearance requirements" },
-      { id: "safety_emergency", label: "Safety & Emergency Procedures", sub: "Emergency exits, incident reporting" },
-    ],
     competencies: ["Pride", "Passion", "Professionalism"],
   },
   30: {
-    classes: [
-      { id: "menu_intermediate", label: "Menu Knowledge — Intermediate", sub: "Specials, wine/beverage, upselling techniques" },
-      { id: "pos_intermediate", label: "POS — Intermediate Functions", sub: "Splits, voids, discounts, comps" },
-      { id: "hospitality_standards", label: "Hospitality Standards Training", sub: "5/10 Rule, Anticipatory service" },
-      { id: "alcohol_awareness", label: "Alcohol Awareness (TIPS/RBS)", sub: "Responsible alcohol service certification" },
-      { id: "food_safety_review", label: "Food Safety — 30-Day Review", sub: "Temperature control, handwashing, storage" },
-      { id: "cash_handling", label: "Cash Handling Procedures", sub: "Room charges, House Cards, Silver Feathers, PCI compliance" },
-    ],
     competencies: ["Pride", "Passion", "Professionalism"],
   },
   45: {
-    classes: [
-      { id: "advanced_menu", label: "Advanced Menu & Beverage Training", sub: "Full beverage program, wine pairings, specialty cocktails" },
-      { id: "guest_recovery", label: "Guest Recovery & Service Failures", sub: "PRIDE recovery model, empowerment, escalation" },
-      { id: "pos_advanced", label: "POS — Advanced Functions", sub: "Server banking, reporting, gift cards" },
-      { id: "cross_training", label: "Cross-Training Introduction", sub: "Adjacent role exposure if applicable" },
-      { id: "silver_feathers", label: "Silver Feathers Loyalty Program", sub: "Program overview, enrollments, point redemptions" },
-    ],
     competencies: ["Pride", "Passion", "Professionalism"],
   },
   60: {
-    classes: [
-      { id: "pride_graduation", label: "PRIDE Training Graduation Review", sub: "Recap of all training modules completed" },
-      { id: "ongoing_standards", label: "Ongoing Hospitality Standards Review", sub: "Expectations for independent performance" },
-      { id: "career_development", label: "Career Development & Goals", sub: "Opportunities for growth within F&B" },
-    ],
     competencies: ["Pride", "Passion", "Professionalism"],
   }
 };
@@ -1269,17 +1229,17 @@ function switchTab(tab, { instant = false } = {}) {
 // ══════════════════════════════════════════════════════════════════════
 //  PERIOD SELECTION
 // ══════════════════════════════════════════════════════════════════════
-// True if anything period-specific (checklist, soft skills, ratings) has been filled in
+// True if anything period-specific (soft skills, ratings, comments) has been filled in
 function hasPeriodData() {
   const root = document.getElementById('period-sections');
-  return [...root.querySelectorAll('#classes-list input, #soft-skills input, #leadership-skills input, #comp-table input')]
+  return [...root.querySelectorAll('#soft-skills input, #leadership-skills input, #comp-table input')]
     .some(i => (i.type === 'checkbox' || i.type === 'radio') ? i.checked : i.value.trim() !== '');
 }
 
 function selectPeriod(el, { skipConfirm = false, noScroll = false } = {}) {
   const next = parseInt(el.dataset.period);
   if (currentPeriod && next !== currentPeriod && !skipConfirm && hasPeriodData() &&
-      !confirm('Switching periods will clear the checklist, skills and ratings you have entered. Continue?')) {
+      !confirm('Switching periods will clear the soft skills and ratings you have entered. Continue?')) {
     return;
   }
   document.querySelectorAll('.period-card').forEach(c => c.classList.remove('selected'));
@@ -1293,18 +1253,6 @@ function selectPeriod(el, { skipConfirm = false, noScroll = false } = {}) {
 
 function renderPeriodSections(period) {
   const data = PERIOD_DATA[period];
-
-  // Classes
-  const classList = document.getElementById('classes-list');
-  classList.innerHTML = data.classes.map(c => `
-    <label class="check-item" id="check-wrap-${c.id}">
-      <input type="checkbox" id="class-${c.id}" onchange="updateCheckStyle('${c.id}')">
-      <div>
-        <div class="check-label">${c.label}</div>
-        <div class="check-sub">${c.sub}</div>
-      </div>
-    </label>
-  `).join('');
 
   // Soft skills (and, for leadership roles, the leadership focus)
   renderSoftSkills({ fresh: true });
@@ -1334,11 +1282,29 @@ function renderPeriodSections(period) {
               <label for="comp-${id}-1"><span class="r-num">1</span><span class="r-lbl">Improve</span></label>
             </div>
           </div>
+          <div class="comp-why" hidden>
+            <label for="comp-comment-${id}"></label>
+            <textarea id="comp-comment-${id}" rows="2" maxlength="500" placeholder="Explain what you observed"></textarea>
+          </div>
         </div>
       </div>
     `;
   }).join('');
 }
+
+// A rating of 3 or 1 has to be explained: show the comment box for those and hide it for a 2
+function syncCompComments() {
+  document.querySelectorAll('#comp-table .comp-row').forEach(row => {
+    const checked = row.querySelector('input[type="radio"]:checked');
+    const rating = checked ? Number(checked.value) : null;
+    const why = row.querySelector('.comp-why');
+    why.hidden = !PrideSkills.needsComment(rating);
+    if (!why.hidden) why.querySelector('label').textContent = `${PrideSkills.commentLabel(rating)} (required)`;
+  });
+}
+document.getElementById('comp-table').addEventListener('change', e => {
+  if (e.target.matches('input[type="radio"]')) syncCompComments();
+});
 
 // ── Soft skills ──
 function fillPositions() {
@@ -1430,10 +1396,6 @@ function softSkillsDetailHtml(e) {
 function compDesc(comp) {
   return { Pride: "Exceeds expectations consistently", Passion: "Meets expectations consistently", Professionalism: "Demonstrates professional conduct" }[comp] || '';
 }
-function updateCheckStyle(id) {
-  const cb = document.getElementById('class-' + id);
-  document.getElementById('check-wrap-' + id).classList.toggle('checked', cb.checked);
-}
 
 // ══════════════════════════════════════════════════════════════════════
 //  SUBMIT
@@ -1487,12 +1449,6 @@ async function submitEvaluation() {
   const tmSigImg = sigPads.tm.toDataURL();
   if (tmSigImg && !PrideSignature.isValidDataUrl(tmSigImg)) return fail('The team member signature could not be saved. Clear it and sign again.');
 
-  // Collect classes
-  const classes = {};
-  data.classes.forEach(c => {
-    classes[c.id] = { label: c.label, completed: document.getElementById('class-'+c.id)?.checked || false };
-  });
-
   // Collect soft skills
   const softSkills = {};
   const collect = (list, group) => list.forEach(sk => {
@@ -1505,13 +1461,21 @@ async function submitEvaluation() {
   collect(shown.skills, 'all');
   collect(shown.leadership, 'leadership');
 
-  // Collect competencies
+  // Collect competencies, and make sure every 3 and 1 is explained
   const competencies = {};
+  const rawComments = {};
   data.competencies.forEach(comp => {
     const id = comp.toLowerCase();
     const sel = document.querySelector(`input[name="comp-${id}"]:checked`);
     competencies[comp] = sel ? parseInt(sel.value) : null;
+    rawComments[comp] = document.getElementById('comp-comment-' + id)?.value || '';
   });
+  const unexplained = PrideSkills.missingCompetencyComments(competencies, rawComments);
+  if (unexplained.length) {
+    const u = unexplained[0];
+    return fail(`Please explain why ${u.name} is rated ${u.rating} (${PrideSkills.RATING_WORDS[u.rating]}).`);
+  }
+  const competencyComments = PrideSkills.cleanCompetencyComments(competencies, rawComments);
 
   const evaluation = {
     tmName, outlet,
@@ -1519,7 +1483,7 @@ async function submitEvaluation() {
     startDate: document.getElementById('f-start-date').value,
     period: currentPeriod,
     evalDate,
-    classes, softSkills, competencies,
+    softSkills, competencies, competencyComments,
     policies: document.getElementById('f-policies').value.trim(),
     expectations: document.getElementById('f-expectations').value.trim(),
     strengths: document.getElementById('f-strengths').value.trim(),
@@ -1573,10 +1537,7 @@ async function sendEmailNotification(ev) {
   try {
     const flaggedSkills = PrideSkills.flaggedSkills(ev.softSkills);
     const subject = `PRIDE Eval: ${ev.tmName} — ${ev.period}-Day | ${ev.outlet}` + (flaggedSkills.length ? ' | ⚠ Critical skill flagged' : '');
-    const ratingLines = Object.entries(ev.competencies)
-      .map(([k,v]) => `${k}: ${v ? ['—','Professionalism (1)','Passion (2)','Pride (3)'][v] : 'Not rated'}`).join('\n');
-    const classLines = Object.values(ev.classes)
-      .map(c => `${c.completed ? '☑' : '☐'} ${c.label}`).join('\n');
+    const ratingLines = PrideSkills.competencyLines(ev.competencies, ev.competencyComments).join('\n');
     const body = [
       `PRIDE Training Log — ${ev.period}-Day Evaluation`,
       `Submitted by: ${ev.submittedByName}`,
@@ -1588,31 +1549,28 @@ async function sendEmailNotification(ev) {
       `Start Date: ${ev.startDate || '—'}`,
       `Eval Date: ${ev.evalDate}`,
       ``,
-      `— A. CLASSES COMPLETED —`,
-      classLines,
-      ``,
-      `— B. SOFT SKILLS —`,
+      `— A. SOFT SKILLS —`,
       ...PrideSkills.emailLines(ev.softSkills),
       ``,
-      `— C. POLICIES REVIEWED —`,
+      `— B. POLICIES REVIEWED —`,
       ev.policies || '(none)',
       ``,
-      `— D. EXPECTATIONS FOR NEXT PERIOD —`,
+      `— C. EXPECTATIONS FOR NEXT PERIOD —`,
       ev.expectations || '(none)',
       ``,
-      `— E. COMPETENCY RATINGS —`,
+      `— D. COMPETENCY RATINGS —`,
       ratingLines,
       ``,
-      `— F. STRENGTHS & HIGHLIGHTS —`,
+      `— E. STRENGTHS & HIGHLIGHTS —`,
       ev.strengths || '(none)',
       ``,
-      `— F. AREAS FOR IMPROVEMENT —`,
+      `— E. AREAS FOR IMPROVEMENT —`,
       ev.improvements || '(none)',
       ``,
-      `— F. TRAINER OBSERVATION NOTES —`,
+      `— E. TRAINER OBSERVATION NOTES —`,
       ev.trainerNotes || '(none)',
       ``,
-      `— G. SIGNATURES —`,
+      `— F. SIGNATURES —`,
       `Trainer: ${ev.trainerName || '—'} | Signed: ${ev.trainerSigImg ? 'Yes (drawn signature)' : (ev.trainerSig || '—')}`,
       `Team Member: ${ev.tmName || '—'} | Signed: ${ev.tmSigImg ? 'Yes (drawn signature)' : (ev.tmSig || 'Not signed')}`,
       `Manager / Supervisor: ${ev.managerSig || '—'}`,
@@ -1640,7 +1598,6 @@ function clearForm() {
     if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
     else el.value = '';
   });
-  document.querySelectorAll('#classes-list .check-item').forEach(c => c.classList.remove('checked'));
   sigPads.trainer.clear(true);
   sigPads.tm.clear(true);
   syncSigNames();
@@ -1698,9 +1655,9 @@ function restoreDraft() {
     const el = document.getElementById(id);
     if (!el) return;
     el.checked = c;
-    if (id.startsWith('class-')) updateCheckStyle(id.slice(6));
   });
   if (draft.sigs) { sigPads.trainer.load(draft.sigs.trainer); sigPads.tm.load(draft.sigs.tm); }
+  syncCompComments();
   syncSigNames();
   saveDraft(); // selectPeriod() saved an empty form before the values were applied
 }
@@ -1826,11 +1783,10 @@ function openDetail(id) {
   detailEvalId = id;
   document.getElementById('modal-title').textContent = `${e.tmName} — ${e.period}-Day Evaluation`;
 
-  const ratingLabel = v => v === 3 ? 'Pride (3)' : v === 2 ? 'Passion (2)' : v === 1 ? 'Professionalism (1)' : '—';
-  const classDone = Object.values(e.classes||{}).filter(c=>c.completed).length;
-  const classTotal = Object.values(e.classes||{}).length;
+  const ratingLabel = v => PrideSkills.RATING_WORDS[v] || '—';
 
   const comps = Object.entries(e.competencies||{});
+  const compComments = e.competencyComments || {};
 
   document.getElementById('modal-body').innerHTML = `
     <div class="detail-grid">
@@ -1841,15 +1797,8 @@ function openDetail(id) {
       <div class="detail-item"><label>Eval Date</label><p>${esc(e.evalDate||'—')}</p></div>
       <div class="detail-item"><label>Start Date</label><p>${esc(e.startDate||'—')}</p></div>
       <div class="detail-item"><label>Submitted By</label><p>${esc(e.submittedByName||e.submittedBy||'—')}</p></div>
-      <div class="detail-item"><label>Classes Completed</label><p>${classDone} / ${classTotal}</p></div>
     </div>
     <div class="notes-slot" data-section="info"></div>
-
-    <div class="detail-section">
-      <h4>Classes / Training Modules</h4>
-      ${Object.values(e.classes||{}).map(c=>`<span class="chip ${c.completed?'green':''}">${c.completed?'☑':'☐'} ${esc(c.label)}</span>`).join('')}
-    </div>
-    <div class="notes-slot" data-section="classes"></div>
 
     ${softSkillsDetailHtml(e)}
     <div class="notes-slot" data-section="soft_skills"></div>
@@ -1859,6 +1808,8 @@ function openDetail(id) {
       <div class="detail-ratings">
         ${comps.map(([k,v])=>`<div class="detail-rating-box"><div class="dr-val">${esc(v||'—')}</div><div class="dr-lbl">${esc(k)}</div><div style="font-size:11px;color:var(--mid)">${ratingLabel(v)}</div></div>`).join('')}
       </div>
+      ${comps.some(([k]) => compComments[k]) ? `<div class="comp-comments">${comps.filter(([k]) => compComments[k]).map(([k,v]) => `
+        <div class="comp-comment"><div class="comp-comment-head">${esc(k)} · ${esc(v)} (${esc(PrideSkills.RATING_WORDS[v] || '')})</div><div class="comp-comment-text">${esc(compComments[k])}</div></div>`).join('')}</div>` : ''}
     </div>
 
     <div class="notes-slot" data-section="competencies"></div>
