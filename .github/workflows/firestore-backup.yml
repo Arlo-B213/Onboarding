@@ -1,0 +1,63 @@
+name: Firestore backup
+
+# This repo is public, so the backup is encrypted inside the job before upload and the
+# job fails if the encryption key is missing. Only counts are ever logged.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   FIREBASE_BACKUP_SA     full JSON key of a service account with ONLY "Cloud Datastore Viewer"
+#   BACKUP_ENCRYPTION_KEY  passphrase used to encrypt the backup (keep a copy in a password manager)
+
+on:
+  schedule:
+    - cron: '17 9 * * *'   # daily, 09:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firestore-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Write service-account key
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_BACKUP_SA }}
+        run: |
+          test -n "$SA_JSON" || { echo "FIREBASE_BACKUP_SA secret is not set"; exit 1; }
+          umask 077
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+
+      - name: Back up Firestore (encrypted)
+        env:
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          BACKUP_REQUIRE_ENCRYPTION: '1'
+          BACKUP_KEEP_DAYS: '0'
+        run: node scripts/backup-firestore.mjs --out "$RUNNER_TEMP/firestore-backup"
+
+      - name: Upload encrypted backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestore-backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/firestore-backup/*.enc
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Remove service-account key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"
