@@ -6,3 +6,8 @@ node_modules/
 
 firestore-debug.log
 .playwright-mcp/
+
+# Firestore backups and service-account keys must never be committed
+backups/
+firestore-*.ndjson*
+*service-account*.json
