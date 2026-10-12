@@ -160,6 +160,33 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
 
+    // ── drafts ──
+    // Private work in progress, one document per draft. Only the owner can see, change or delete
+    // it. Not an evaluation: no audit trail. Submitting a draft creates a real evaluation and then
+    // deletes the draft. `payload` is the form snapshot as JSON text.
+    function validDraft(d) {
+      return d.keys().hasOnly(['ownerUid', 'tmName', 'period', 'payload', 'createdAt', 'updatedAt'])
+        && d.keys().hasAll(['ownerUid', 'tmName', 'period', 'payload', 'createdAt', 'updatedAt'])
+        && d.ownerUid is string
+        && d.tmName is string && d.tmName.size() <= 200
+        && d.period is string && d.period.size() <= 10
+        && d.payload is string && d.payload.size() <= 900000;
+    }
+    match /drafts/{draftId} {
+      allow read, delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow create: if signedIn()
+        && validDraft(request.resource.data)
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && validDraft(request.resource.data)
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+    }
+
     // Deny everything else
     match /{document=**} {
       allow read, write: if false;

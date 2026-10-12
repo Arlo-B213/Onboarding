@@ -628,6 +628,13 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 /* ══ MOBILE ══ phones: tighter spacing, tables become cards, a roomier modal and form actions */
 .rating-legend { display: grid; gap: 4px; margin-bottom: 14px; font-size: 12px; color: var(--mid); }
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; padding-bottom: 40px; }
+.draft-panel { border: 1px solid var(--line-gold); border-radius: 12px; background: var(--surface); padding: 16px 18px; margin-bottom: 22px; }
+.draft-heading { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gold-hi); margin-bottom: 6px; }
+.draft-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.draft-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.draft-row.active .draft-name { color: var(--gold-hi); }
+.draft-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.draft-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .period-pill { white-space: nowrap; }
 .soft-eg { margin: 2px 0 0; }
 .soft-row .rating-group { margin-top: 10px; }
@@ -792,6 +799,11 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
     <div id="panel-new">
       <div class="page-title">New Evaluation</div>
       <p class="page-sub">Complete the PRIDE Training Log for a team member.</p>
+      <div class="draft-panel" id="draft-panel" hidden>
+        <div class="draft-heading">My Drafts</div>
+        <div class="error-msg" id="draft-error"></div>
+        <div id="draft-rows"></div>
+      </div>
 
       <!-- Setup notice -->
       <div class="setup-banner" id="firebase-setup-notice">
@@ -999,6 +1011,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 
         <div class="form-actions">
           <button class="btn btn-ghost" onclick="clearForm()">Clear Form</button>
+          <button class="btn btn-outline" onclick="saveCloudDraft()">Save Draft</button>
           <button class="btn btn-primary" id="submit-btn" onclick="submitEvaluation()">
             <span id="submit-label">Submit Evaluation</span>
           </button>
@@ -1107,6 +1120,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
 
 <script src="contrib-core.js"></script>
+<script src="drafts-core.js"></script>
 <script src="contrib-ui.js"></script>
 <script src="fx.js"></script>
 <script src="softskills.js"></script>
@@ -1183,6 +1197,8 @@ auth.onAuthStateChanged(user => {
     showApp(user);
   } else {
     currentUser = null;
+    currentDraftId = null;
+    myDrafts = [];
     showLogin();
   }
 });
@@ -1225,6 +1241,7 @@ function showApp(user) {
 
   loadEvals();
   restoreDraft();
+  loadMyDrafts();
 }
 
 async function signIn() {
@@ -1599,6 +1616,14 @@ async function submitEvaluation() {
   // Saved. The draft is no longer needed; the email is best-effort.
   clearDraft();
   loadEvals();
+  // The evaluation is saved, so the cloud draft it came from is no longer needed
+  if (currentDraftId) {
+    const doneId = currentDraftId;
+    currentDraftId = null;
+    try { await draftsRef().doc(doneId).delete(); }
+    catch(e) { console.warn('Could not remove the submitted draft', e); }
+    loadMyDrafts();
+  }
   const emailed = await sendEmailNotification(evaluation);
   ok.textContent = emailed
     ? `✓ Evaluation submitted for ${tmName} (${currentPeriod}-Day). A copy has been sent to ${ADMIN_EMAIL}.`
@@ -1686,6 +1711,8 @@ function clearForm() {
   document.getElementById('submit-error').classList.remove('show');
   document.getElementById('submit-success').classList.remove('show');
   clearDraft();
+  currentDraftId = null;
+  renderDrafts();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
@@ -1694,17 +1721,22 @@ function clearForm() {
 // ══════════════════════════════════════════════════════════════════════
 const draftKey = () => currentUser ? `pride-draft-${currentUser.uid}` : null;
 
+// The whole form as one object. Shared by the local autosave and the cloud drafts.
+function snapshotForm() {
+  const vals = {}, checks = {};
+  document.querySelectorAll('#panel-new input[id], #panel-new textarea[id], #panel-new select[id]').forEach(el => {
+    if (el.type === 'checkbox' || el.type === 'radio') checks[el.id] = el.checked;
+    else vals[el.id] = el.value;
+  });
+  const sigs = { trainer: sigPads.trainer.toDataURL(), tm: sigPads.tm.toDataURL() };
+  return { period: currentPeriod, vals, checks, sigs };
+}
+
 function saveDraft() {
   const key = draftKey();
   if (!key || submitting) return;
   try {
-    const vals = {}, checks = {};
-    document.querySelectorAll('#panel-new input[id], #panel-new textarea[id], #panel-new select[id]').forEach(el => {
-      if (el.type === 'checkbox' || el.type === 'radio') checks[el.id] = el.checked;
-      else vals[el.id] = el.value;
-    });
-    const sigs = { trainer: sigPads.trainer.toDataURL(), tm: sigPads.tm.toDataURL() };
-    localStorage.setItem(key, JSON.stringify({ period: currentPeriod, vals, checks, sigs }));
+    localStorage.setItem(key, JSON.stringify(snapshotForm()));
   } catch(e) { /* storage unavailable or full — drafts are best-effort */ }
 }
 
@@ -1719,6 +1751,11 @@ function restoreDraft() {
   let draft;
   try { draft = JSON.parse(localStorage.getItem(key) || 'null'); } catch(e) { return; }
   if (!draft) return;
+  applyDraft(draft);
+}
+
+// Fill the form from a saved snapshot (local autosave or a cloud draft)
+function applyDraft(draft) {
   if (draft.period) {
     const card = document.querySelector(`.period-card[data-period="${draft.period}"]`);
     if (card) selectPeriod(card, { skipConfirm: true, noScroll: true });
@@ -1746,6 +1783,125 @@ function queueDraftSave() {
   draftTimer = setTimeout(saveDraft, 400);
 }
 ['input', 'change'].forEach(evt => document.getElementById('panel-new').addEventListener(evt, queueDraftSave));
+
+// ══════════════════════════════════════════════════════════════════════
+//  CLOUD DRAFTS (Firestore, private to each leader; reopen or delete any time)
+// ══════════════════════════════════════════════════════════════════════
+let currentDraftId = null; // the cloud draft the form is editing, if any
+let myDrafts = [];
+const draftsRef = () => db.collection('drafts');
+
+async function loadMyDrafts() {
+  if (!currentUser) return;
+  const errBox = document.getElementById('draft-error');
+  errBox.classList.remove('show');
+  try {
+    const snap = await draftsRef().where('ownerUid', '==', currentUser.uid).get();
+    myDrafts = PrideDrafts.sortNewestFirst(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  } catch(e) {
+    console.error(e);
+    errBox.textContent = 'Could not load your drafts. Check your connection and try again.';
+    errBox.classList.add('show');
+  }
+  renderDrafts();
+}
+
+function renderDrafts() {
+  document.getElementById('draft-panel').hidden = myDrafts.length === 0;
+  document.getElementById('draft-rows').innerHTML = myDrafts.map(d => `
+    <div class="draft-row${d.id === currentDraftId ? ' active' : ''}">
+      <div>
+        <div class="draft-name">${esc(PrideDrafts.title(d))}</div>
+        <div class="draft-meta">${esc(d.period ? d.period + '-Day' : 'No period yet')} · Saved ${esc(PrideDrafts.savedLabel(d))}</div>
+      </div>
+      <div class="draft-actions">
+        <button class="btn btn-outline btn-sm" data-action="open-draft" data-id="${esc(d.id)}">Open</button>
+        <button class="btn btn-ghost btn-sm" data-action="delete-draft" data-id="${esc(d.id)}">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('draft-rows').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  if (btn.dataset.action === 'open-draft') openCloudDraft(btn.dataset.id);
+  if (btn.dataset.action === 'delete-draft') deleteCloudDraft(btn.dataset.id);
+});
+
+async function saveCloudDraft() {
+  const err = document.getElementById('submit-error');
+  const ok = document.getElementById('submit-success');
+  err.classList.remove('show');
+  ok.classList.remove('show');
+  const tmName = document.getElementById('f-tm-name').value.trim();
+  const fields = {
+    ownerUid: currentUser.uid,
+    tmName,
+    period: currentPeriod || '',
+    payload: JSON.stringify(snapshotForm()),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+  try {
+    if (currentDraftId) {
+      await draftsRef().doc(currentDraftId).update(fields);
+    } else {
+      const ref = await draftsRef().add({ ...fields, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      currentDraftId = ref.id;
+    }
+    ok.textContent = `✓ Draft saved${tmName ? ' for ' + tmName : ''}. Reopen it from My Drafts to finish later.`;
+    ok.classList.add('show');
+    loadMyDrafts();
+  } catch(e) {
+    console.error(e);
+    err.textContent = 'Could not save the draft. Check your connection and try again.';
+    err.classList.add('show');
+  }
+}
+
+async function openCloudDraft(id) {
+  const errBox = document.getElementById('draft-error');
+  errBox.classList.remove('show');
+  let draft = null;
+  try {
+    const snap = await draftsRef().doc(id).get();
+    draft = snap.exists ? PrideDrafts.decode(snap.data().payload) : null;
+  } catch(e) { console.error(e); }
+  if (!draft) {
+    errBox.textContent = 'That draft could not be opened. It may have been deleted.';
+    errBox.classList.add('show');
+    loadMyDrafts();
+    return;
+  }
+  // Opening replaces the form, so ask before throwing away what is typed there
+  const current = snapshotForm();
+  const typed = currentPeriod || Object.entries(current.vals).some(([k, v]) => k !== 'f-eval-date' && v);
+  if (typed && !confirm('Replace the current form with this draft? Anything typed in the form that is not saved as a draft will be lost.')) return;
+  clearForm();
+  applyDraft(draft);
+  currentDraftId = id;
+  renderDrafts();
+  const ok = document.getElementById('submit-success');
+  ok.textContent = `Opened draft for ${PrideDrafts.title(myDrafts.find(d => d.id === id) || {})}.`;
+  ok.classList.add('show');
+}
+
+async function deleteCloudDraft(id) {
+  const errBox = document.getElementById('draft-error');
+  errBox.classList.remove('show');
+  const name = PrideDrafts.title(myDrafts.find(d => d.id === id) || {});
+  if (!confirm(`Delete the draft "${name}"? This cannot be undone.`)) return;
+  try {
+    await draftsRef().doc(id).delete();
+  } catch(e) {
+    console.error(e);
+    errBox.textContent = 'Could not delete the draft. Check your connection and try again.';
+    errBox.classList.add('show');
+    return;
+  }
+  // The form keeps what was typed, but it is no longer linked to a saved draft
+  if (currentDraftId === id) currentDraftId = null;
+  loadMyDrafts();
+}
 
 // ── Signature pads ──
 const sigPads = {
