@@ -7,6 +7,8 @@ export { assertSucceeds, assertFails };
 export const ADMIN = 'arlo.bedolla@gmail.com';
 export const LEADER_A = 'a@pechanga.com';
 export const LEADER_B = 'b@pechanga.com';
+export const LEADER_C = 'c@pechanga.com'; // on no team unless a test adds them
+export const TEAM = 't1';                 // default team: LEADER_A and LEADER_B
 
 export function createEnv() {
   return initializeTestEnvironment({
@@ -20,9 +22,15 @@ export const dbAs = (env, email) =>
 export const anonDb = env => env.unauthenticatedContext().firestore();
 
 // ── document builders ──
-export const evalDoc = (by, over = {}) => ({
+// Pass { teamId: undefined } for an evaluation with no team
+const dropUndefined = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
+export const evalDoc = (by, over = {}) => dropUndefined({
   tmName: 'Pat', outlet: 'Great Oak', period: 30,
-  submittedBy: by, submittedAt: serverTimestamp(), ...over,
+  teamId: TEAM, submittedBy: by, submittedAt: serverTimestamp(), ...over,
+});
+export const teamDoc = (members = [LEADER_A, LEADER_B], over = {}) => ({
+  name: 'Agave Leads', memberEmails: members,
+  createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...over,
 });
 export const submittedLog = (by, over = {}) => ({
   type: 'submitted', contributionId: null, rev: null,
@@ -71,10 +79,18 @@ export function changeContribution(db, { evalId = 'e1', cid = 'c1', by = LEADER_
 }
 
 // ── seeds (bypass rules) ──
-export async function seedEvaluation(env, { id = 'e1', by = LEADER_A, withLog = true } = {}) {
+export async function seedTeam(env, { id = TEAM, members = [LEADER_A, LEADER_B], over = {} } = {}) {
+  await env.withSecurityRulesDisabled(async c => {
+    await setDoc(doc(c.firestore(), 'teams', id), teamDoc(members, over));
+  });
+}
+
+// Seeds the evaluation and (unless team: false) its default team with LEADER_A and LEADER_B
+export async function seedEvaluation(env, { id = 'e1', by = LEADER_A, withLog = true, team = true, evalOver = {} } = {}) {
+  if (team) await seedTeam(env);
   await env.withSecurityRulesDisabled(async c => {
     const db = c.firestore();
-    await setDoc(doc(db, 'evaluations', id), evalDoc(by));
+    await setDoc(doc(db, 'evaluations', id), evalDoc(by, evalOver));
     if (withLog) await setDoc(doc(db, 'evaluations', id, 'activity', 'submitted'), submittedLog(by));
   });
 }

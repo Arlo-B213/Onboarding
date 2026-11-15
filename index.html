@@ -372,6 +372,25 @@ body {
 @media (max-width: 480px) { .contrib-ratings { grid-template-columns: 1fr; } }
 .contrib-actions { display: flex; gap: 8px; margin-top: 12px; }
 .contrib-empty { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+
+/* teams */
+.field-hint { display: block; font-size: 11px; color: var(--muted); margin-top: 6px; }
+.field-hint.warn { color: var(--danger); }
+.team-card .section-header { justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.team-head-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.team-head-actions { display: flex; gap: 8px; }
+.team-members { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px; }
+.team-member { display: inline-flex; align-items: center; gap: 6px; padding-right: 4px; }
+.team-member button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1; padding: 0 4px; border-radius: 50%; }
+.team-member button:hover { color: var(--danger); }
+.team-member button:focus-visible { outline: none; box-shadow: var(--focus); }
+.team-add-row { display: flex; gap: 8px; align-items: flex-start; }
+.team-add-row textarea, .team-add-row input { flex: 1; }
+@media (max-width: 560px) { .team-add-row { flex-direction: column; align-items: stretch; } }
+.team-assign { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.team-assign select { width: auto; min-width: 180px; }
+.btn-danger-ghost { background: transparent; color: var(--danger); border-color: rgba(238,123,109,0.45); }
+.btn-danger-ghost:hover:not(:disabled) { background: rgba(238,123,109,0.10); }
 /* ══ EFFECTS ══ a golden light travels around cards; everything here is switched off for prefers-reduced-motion */
 @property --aura-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 @keyframes aura-spin { to { --aura-angle: 360deg; } }
@@ -786,6 +805,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
       <button class="tab-btn active" data-tab="new" onclick="switchTab('new')">New Evaluation</button>
       <button class="tab-btn" data-tab="admin" onclick="switchTab('admin')">All Evaluations</button>
       <button class="tab-btn" id="tab-activity" data-tab="activity" onclick="switchTab('activity')" hidden>Activity</button>
+      <button class="tab-btn" id="tab-teams" data-tab="teams" onclick="switchTab('teams')" hidden>Teams</button>
     </div>
 
     <!-- ─── NEW EVALUATION ─── -->
@@ -814,6 +834,11 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
             <div class="field">
               <label>Outlet / Location</label>
               <input type="text" id="f-outlet" placeholder="e.g. Great Oak, Blazing Noodles">
+            </div>
+            <div class="field">
+              <label for="f-team">Team</label>
+              <select id="f-team"><option value="">Loading teams…</option></select>
+              <small class="field-hint" id="f-team-hint">Only leaders on this team will see the evaluation and its feedback.</small>
             </div>
             <div class="field">
               <label>Position / Title</label>
@@ -1020,9 +1045,38 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
       </div>
     </div>
 
+    <!-- ─── TEAMS (admin) ─── -->
+    <div id="panel-teams" hidden>
+      <div class="page-title">Teams</div>
+      <p class="page-sub">Leaders only see evaluations, and share feedback, for the teams they are on. Admins see everything.</p>
+
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-badge">New</span>
+          <span class="section-title">Create a team</span>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label for="team-new-name">Team name</label>
+            <input type="text" id="team-new-name" maxlength="80" placeholder="e.g. Agave Leads">
+          </div>
+          <div class="field">
+            <label for="team-new-members">Leader emails</label>
+            <textarea id="team-new-members" rows="2" placeholder="One or more emails, separated by commas or new lines" list="team-email-suggestions"></textarea>
+          </div>
+          <div class="error-msg" id="team-new-error"></div>
+          <button class="btn btn-primary btn-sm" id="team-new-btn" type="button">Create Team</button>
+        </div>
+      </div>
+
+      <div id="teams-unassigned"></div>
+      <div id="teams-list"><div class="empty-state"><p>Loading teams…</p></div></div>
+      <datalist id="team-email-suggestions"></datalist>
+    </div>
+
     <!-- ─── ADMIN PANEL ─── -->
     <div id="panel-admin" hidden>
-      <div class="page-title">All Evaluations</div>
+      <div class="page-title" id="admin-page-title">All Evaluations</div>
       <p class="page-sub">Review and filter submitted PRIDE Training Log evaluations.</p>
 
       <div class="filter-bar">
@@ -1053,6 +1107,10 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
           </select>
         </div>
         <div class="field">
+          <label>Team</label>
+          <select id="filter-team" onchange="filterEvals()"><option value="">All Teams</option></select>
+        </div>
+        <div class="field">
           <label>Outlet</label>
           <input type="text" id="filter-outlet" placeholder="Filter by outlet..." oninput="filterEvals()">
         </div>
@@ -1069,6 +1127,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
             <tr>
               <th>Team Member</th>
               <th>Outlet</th>
+              <th>Team</th>
               <th>Period</th>
               <th>Eval Date</th>
               <th>Submitted By</th>
@@ -1076,7 +1135,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
             </tr>
           </thead>
           <tbody id="eval-table-body">
-            <tr><td colspan="6"><div class="empty-state"><div class="icon">📋</div><p>Loading evaluations…</p></div></td></tr>
+            <tr><td colspan="7"><div class="empty-state"><div class="icon">📋</div><p>Loading evaluations…</p></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -1108,6 +1167,8 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 
 <script src="contrib-core.js"></script>
 <script src="contrib-ui.js"></script>
+<script src="teams-core.js"></script>
+<script src="teams-ui.js"></script>
 <script src="fx.js"></script>
 <script src="softskills.js"></script>
 <script src="signature.js"></script>
@@ -1161,6 +1222,8 @@ const PERIOD_DATA = {
 //  INIT
 // ══════════════════════════════════════════════════════════════════════
 let db, auth, currentUser, currentIsAdmin = false, allEvals = [], currentPeriod = null;
+// Teams the signed-in user can see (admins: every team). loadEvals() waits for teamsReady.
+let myTeams = [], teamsReady = Promise.resolve();
 
 firebase.initializeApp(FIREBASE_CONFIG);
 emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -1211,6 +1274,9 @@ function showApp(user) {
   currentIsAdmin = isAdmin;
   document.getElementById('topbar-admin-badge').hidden = !isAdmin;
   document.getElementById('tab-activity').hidden = !isAdmin;
+  document.getElementById('tab-teams').hidden = !isAdmin;
+  document.getElementById('admin-page-title').textContent = isAdmin ? 'All Evaluations' : 'Team Evaluations';
+  document.querySelector('[data-tab="admin"]').textContent = isAdmin ? 'All Evaluations' : 'Team Evaluations';
 
   // A real sign-in click gets the full welcome transition; a restored session just appears
   const reveal = () => {
@@ -1223,6 +1289,7 @@ function showApp(user) {
   if (PrideFx.consumeLogin()) PrideFx.loginTransition(reveal);
   else reveal();
 
+  teamsReady = loadMyTeams();
   loadEvals();
   restoreDraft();
 }
@@ -1283,9 +1350,9 @@ function humanAuthError(code) {
 // ══════════════════════════════════════════════════════════════════════
 //  TABS
 // ══════════════════════════════════════════════════════════════════════
-const TAB_ORDER = ['new', 'admin', 'activity'];
+const TAB_ORDER = ['new', 'admin', 'activity', 'teams'];
 function switchTab(tab, { instant = false } = {}) {
-  const panels = { new: 'panel-new', admin: 'panel-admin', activity: 'panel-activity' };
+  const panels = { new: 'panel-new', admin: 'panel-admin', activity: 'panel-activity', teams: 'panel-teams' };
   const currentTab = TAB_ORDER.find(t => !document.getElementById(panels[t]).hidden);
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   if (instant) {
@@ -1302,6 +1369,7 @@ function switchTab(tab, { instant = false } = {}) {
   }
   if (tab === 'admin') loadEvals();
   if (tab === 'activity' && currentIsAdmin) loadEvals().then(loadActivityFeed);
+  if (tab === 'teams' && currentIsAdmin) loadTeamsPanel();
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1496,6 +1564,12 @@ async function submitEvaluation() {
   const evalDate = document.getElementById('f-eval-date').value;
   if (!tmName) return fail('Team Member Name is required.');
   if (!outlet) return fail('Outlet is required.');
+  const teamChoice = document.getElementById('f-team').value;
+  if (!teamChoice) {
+    return fail(currentIsAdmin || myTeams.length ? 'Please choose a team.'
+      : 'You are not on a team yet. Ask an admin to add you to one before submitting.');
+  }
+  const teamId = teamChoice === NO_TEAM ? null : teamChoice;
   const position = document.getElementById('f-position').value;
   if (!position) return fail('Position is required.');
   const area = document.getElementById('f-area').value;
@@ -1557,6 +1631,7 @@ async function submitEvaluation() {
 
   const evaluation = {
     tmName, outlet,
+    ...(teamId ? { teamId } : {}),
     position, area, roleLevel: level || 'line',
     startDate: document.getElementById('f-start-date').value,
     period: currentPeriod,
@@ -1622,6 +1697,7 @@ async function sendEmailNotification(ev) {
       ``,
       `TEAM MEMBER: ${ev.tmName}`,
       `Outlet: ${ev.outlet}`,
+      `Team: ${PrideTeams.teamLabel(myTeams, ev.teamId)}`,
       `Position: ${ev.position || '—'} (${ev.roleLevel === 'leadership' ? 'Leadership' : 'Line level'})`,
       `Area: ${ev.area || '—'}`,
       `Start Date: ${ev.startDate || '—'}`,
@@ -1679,6 +1755,7 @@ function clearForm() {
   sigPads.trainer.clear(true);
   sigPads.tm.clear(true);
   syncSigNames();
+  fillTeamSelect();
   document.getElementById('f-eval-date').value = todayLocal();
   document.querySelectorAll('.period-card').forEach(c => c.classList.remove('selected'));
   currentPeriod = null;
@@ -1728,7 +1805,13 @@ function restoreDraft() {
     document.getElementById('f-position').value = draft.vals['f-position'];
     renderSoftSkills();
   }
-  Object.entries(draft.vals || {}).forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.value = v; });
+  // The team options may still be loading; fillTeamSelect() applies the saved team once they arrive
+  if (draft.vals && draft.vals['f-team']) pendingDraftTeam = draft.vals['f-team'];
+  Object.entries(draft.vals || {}).forEach(([id, v]) => {
+    if (id === 'f-team') return;
+    const el = document.getElementById(id); if (el) el.value = v;
+  });
+  fillTeamSelect();
   Object.entries(draft.checks || {}).forEach(([id, c]) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -1763,14 +1846,24 @@ syncSigNames();
 // ══════════════════════════════════════════════════════════════════════
 //  ADMIN: LOAD & DISPLAY
 // ══════════════════════════════════════════════════════════════════════
+// Admins load every evaluation. A leader loads only their teams' evaluations, one query per
+// team, because the Firestore rules refuse any query that could return another team's evaluation.
 async function loadEvals() {
   try {
-    const snap = await db.collection('evaluations').orderBy('submittedAt','desc').limit(200).get();
-    allEvals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    await teamsReady;
+    const toList = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (currentIsAdmin) {
+      allEvals = toList(await db.collection('evaluations').orderBy('submittedAt','desc').limit(200).get());
+    } else {
+      const lists = await Promise.all(myTeams.map(t => db.collection('evaluations')
+        .where('teamId', '==', t.id).orderBy('submittedAt','desc').limit(200).get().then(toList)));
+      allEvals = PrideTeams.mergeEvals(lists, 200);
+    }
+    fillTeamFilter();
     filterEvals();
   } catch(e) {
     console.error(e);
-    document.getElementById('eval-table-body').innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:20px;">Error loading: ${esc(e.message)}</td></tr>`;
+    document.getElementById('eval-table-body').innerHTML = `<tr><td colspan="7" style="color:var(--danger);padding:20px;">Error loading: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -1780,7 +1873,10 @@ function filterEvals() {
   const name = document.getElementById('filter-name').value.toLowerCase();
   const level = document.getElementById('filter-level').value;
   const area = document.getElementById('filter-area').value;
+  const team = document.getElementById('filter-team').value;
+  const known = new Set(myTeams.map(t => t.id));
   const filtered = allEvals.filter(e =>
+    (!team || (team === NO_TEAM ? !(e.teamId && known.has(e.teamId)) : e.teamId === team)) &&
     (!period || String(e.period) === period) &&
     (!level || (e.roleLevel || PrideSkills.roleLevel(e.position)) === level) &&
     (!area || (e.area || PrideSkills.areaFor(e.position)) === area) &&
@@ -1793,6 +1889,7 @@ function clearFilters() {
   document.getElementById('filter-period').value = '';
   document.getElementById('filter-level').value = '';
   document.getElementById('filter-area').value = '';
+  document.getElementById('filter-team').value = '';
   document.getElementById('filter-outlet').value = '';
   document.getElementById('filter-name').value = '';
   renderEvalTable(allEvals);
@@ -1801,7 +1898,10 @@ function clearFilters() {
 function renderEvalTable(evals) {
   const tbody = document.getElementById('eval-table-body');
   if (!evals.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="icon">📋</div><p>No evaluations found.</p></div></td></tr>`;
+    const msg = !currentIsAdmin && !myTeams.length
+      ? 'You are not on a team yet, so there are no evaluations to show. Ask an admin to add you to a team.'
+      : 'No evaluations found.';
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">📋</div><p>${esc(msg)}</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = evals.map(e => {
@@ -1813,6 +1913,7 @@ function renderEvalTable(evals) {
     return `<tr>
       <td><strong>${esc(e.tmName)}</strong><br><small style="color:var(--mid)">${esc(e.position||'')}</small>${areaTag ? ` <span class="chip">${esc(areaTag)}</span>` : ''}${lvl === 'leadership' ? ' <span class="chip">Leadership</span>' : ''}${flag}</td>
       <td data-label="Outlet">${esc(e.outlet||'—')}</td>
+      <td data-label="Team">${teamCellHtml(e)}</td>
       <td data-label="Period"><span class="period-pill">${esc(e.period)}-Day</span></td>
       <td data-label="Eval date">${date}</td>
       <td data-label="Submitted by"><span><small>${esc(e.submittedByName||e.submittedBy||'—')}</small><br><small style="color:var(--mid)">${esc(sub)}</small></span></td>
@@ -1875,6 +1976,7 @@ function openDetail(id) {
       <div class="detail-item"><label>Eval Date</label><p>${esc(e.evalDate||'—')}</p></div>
       <div class="detail-item"><label>Start Date</label><p>${esc(e.startDate||'—')}</p></div>
       <div class="detail-item"><label>Submitted By</label><p>${esc(e.submittedByName||e.submittedBy||'—')}</p></div>
+      <div class="detail-item"><label>Team</label>${currentIsAdmin ? teamAssignHtml(e) : `<p>${esc(PrideTeams.teamLabel(myTeams, e.teamId))}</p>`}</div>
     </div>
     <div class="notes-slot" data-section="info"></div>
 
