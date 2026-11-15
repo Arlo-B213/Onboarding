@@ -1,8 +1,8 @@
 import { describe, it, before, after, beforeEach } from 'node:test';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, query, orderBy } from 'firebase/firestore';
 import {
-  createEnv, dbAs, anonDb, seedEvaluation, seedContribution, addContribution, changeContribution,
-  assertSucceeds, assertFails, LEADER_A, LEADER_B,
+  createEnv, dbAs, anonDb, seedEvaluation, seedTeam, seedContribution, addContribution, changeContribution,
+  assertSucceeds, assertFails, ADMIN, LEADER_A, LEADER_B, LEADER_C,
 } from './helpers.mjs';
 
 let env;
@@ -11,9 +11,20 @@ after(async () => { await env.cleanup(); });
 beforeEach(async () => { await env.clearFirestore(); await seedEvaluation(env); });
 
 describe('contributions: read', () => {
-  it('any signed-in leader can read', async () => {
+  const listNotes = db => getDocs(query(collection(db, 'evaluations', 'e1', 'contributions'), orderBy('createdAt', 'asc')));
+  it('a leader on the team can read', async () => {
     await seedContribution(env);
     await assertSucceeds(getDoc(doc(dbAs(env, LEADER_B), 'evaluations', 'e1', 'contributions', 'c1')));
+    await assertSucceeds(listNotes(dbAs(env, LEADER_B)));
+  });
+  it('a leader off the team cannot read', async () => {
+    await seedContribution(env);
+    await assertFails(getDoc(doc(dbAs(env, LEADER_C), 'evaluations', 'e1', 'contributions', 'c1')));
+    await assertFails(listNotes(dbAs(env, LEADER_C)));
+  });
+  it('an admin can read', async () => {
+    await seedContribution(env);
+    await assertSucceeds(listNotes(dbAs(env, ADMIN)));
   });
   it('signed-out users cannot read', async () => {
     await seedContribution(env);
@@ -27,6 +38,12 @@ describe('contributions: create', () => {
   });
   it('fails without the log entry', async () => {
     await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_B, withLog: false }));
+  });
+  it('a leader off the team cannot add input', async () => {
+    await assertFails(addContribution(dbAs(env, LEADER_C), { by: LEADER_C }));
+  });
+  it('an admin can add input to any team\'s evaluation', async () => {
+    await assertSucceeds(addContribution(dbAs(env, ADMIN), { by: ADMIN }));
   });
   it('fails when authorEmail is someone else', async () => {
     await assertFails(addContribution(dbAs(env, LEADER_B), { by: LEADER_A }));
@@ -100,6 +117,10 @@ describe('contributions: edit', () => {
   });
   it('fails without the log entry', async () => {
     await assertFails(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: SECOND, withLog: false }));
+  });
+  it('the author cannot edit it after being taken off the team', async () => {
+    await seedTeam(env, { members: [LEADER_B] });
+    await assertFails(changeContribution(dbAs(env, LEADER_A), { before: FIRST, after: SECOND }));
   });
   it('fails when rev skips ahead', async () => {
     await assertFails(changeContribution(dbAs(env, LEADER_A), { rev: 3, before: FIRST, after: SECOND }));

@@ -1,4 +1,5 @@
-// Seeds the LOCAL Firebase emulators with test accounts and one sample evaluation.
+// Seeds the LOCAL Firebase emulators with test accounts, one team and two sample evaluations.
+// Leader One is on the "Sample Team"; Leader Two is on no team, so sees nothing until an admin adds them.
 // Never touches production: it only talks to 127.0.0.1.
 //
 //   npx firebase emulators:start --only auth,firestore,hosting --project onboarding-23722
@@ -45,8 +46,16 @@ const nul = { nullValue: null };
 
 for (const a of ACCOUNTS) await createAccount(a);
 
+await put('teams/sample-team', {
+  name: str('Sample Team'),
+  memberEmails: { arrayValue: { values: [str('leader1@test.com')] } },
+  createdAt: now(), updatedAt: now(),
+});
+console.log('seeded team sample-team (Leader One)');
+
 const by = 'leader1@test.com';
 await put('evaluations/sample1', {
+  teamId: str('sample-team'),
   tmName: str('Sample Teammate'), outlet: str('Great Oak'), position: str('Food Server'),
   startDate: str('2026-09-01'), evalDate: str(new Date().toISOString().slice(0, 10)),
   period: int(30),
@@ -61,3 +70,15 @@ await put('evaluations/sample1/activity/submitted', {
   at: now(), before: nul, after: nul,
 });
 console.log('seeded evaluation sample1');
+
+// An older-style evaluation with no team: only the admin sees it until it is put on a team
+await put('evaluations/sample2', {
+  tmName: str('Unassigned Teammate'), outlet: str('Pronto'), position: str('Cashier'),
+  startDate: str('2026-08-15'), evalDate: str(new Date().toISOString().slice(0, 10)),
+  period: int(14),
+  competencies: { mapValue: { fields: { Pride: int(2), Passion: int(2), Professionalism: int(2) } } },
+  policies: str(''), expectations: str(''), strengths: str(''), improvements: str(''), trainerNotes: str(''),
+  trainerName: str('Arlo'), trainerSig: str('Arlo'), tmSig: str(''), managerSig: str(''),
+  submittedBy: str('arlo.bedolla@gmail.com'), submittedByName: str('Arlo (admin)'), submittedAt: now(),
+});
+console.log('seeded evaluation sample2 (no team)');

@@ -12,6 +12,33 @@ service cloud.firestore {
         ];
     }
     function signedIn() { return request.auth != null; }
+    function myEmail() { return request.auth.token.email.lower(); }
+
+    // ── teams ──
+    // An admin puts leaders on teams. A leader sees an evaluation, and its notes, only when
+    // they are on the evaluation's team. Evaluations with no team (or whose team was deleted)
+    // are admin-only. Member emails are stored lowercase.
+    function teamPath(teamId) {
+      return /databases/$(database)/documents/teams/$(teamId);
+    }
+    function isTeamMember(teamId) {
+      return signedIn() && teamId is string
+        && exists(teamPath(teamId))
+        && myEmail() in get(teamPath(teamId)).data.memberEmails;
+    }
+    function canSeeEval(d) {
+      return isAdmin() || isTeamMember(d.get('teamId', null));
+    }
+    function canSeeEvalId(evalId) {
+      return exists(evalPath(evalId)) && canSeeEval(get(evalPath(evalId)).data);
+    }
+    function validTeam(d) {
+      return d.keys().hasAll(['name', 'memberEmails', 'createdAt', 'updatedAt'])
+        && d.keys().hasOnly(['name', 'memberEmails', 'createdAt', 'updatedAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+        && d.memberEmails is list && d.memberEmails.size() <= 200
+        && d.updatedAt == request.time;
+    }
 
     function evalPath(evalId) {
       return /databases/$(database)/documents/evaluations/$(evalId);
@@ -105,19 +132,41 @@ service cloud.firestore {
     }
 
     // ── evaluations ──
+    match /teams/{teamId} {
+      allow read: if isAdmin() || (signedIn() && myEmail() in resource.data.memberEmails);
+      allow create: if isAdmin()
+        && validTeam(request.resource.data)
+        && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin()
+        && validTeam(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
+    }
+
     match /evaluations/{evalId} {
-      allow read: if signedIn();
+      allow read: if signedIn() && canSeeEval(resource.data);
+      // A leader must file the evaluation under one of their own teams. An admin may file it
+      // under any existing team, or under none (then only admins can see it).
       allow create: if signedIn()
         && request.resource.data.submittedBy == request.auth.token.email
         && request.resource.data.submittedAt == request.time
+        && (isTeamMember(request.resource.data.get('teamId', null))
+            || (isAdmin() && (!('teamId' in request.resource.data)
+                || (request.resource.data.teamId is string && exists(teamPath(request.resource.data.teamId))))))
         && existsAfter(activityPath(evalId, 'submitted'))
         && getAfter(activityPath(evalId, 'submitted')).data.type == 'submitted';
-      allow update, delete: if false;
+      // The evaluation itself never changes. The one exception: an admin can move it to
+      // another team, or take it off its team.
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId'])
+        && (!('teamId' in request.resource.data)
+            || (request.resource.data.teamId is string && exists(teamPath(request.resource.data.teamId))));
+      allow delete: if false;
 
       match /contributions/{cid} {
-        allow read: if signedIn();
+        allow read: if signedIn() && canSeeEvalId(evalId);
         allow create: if signedIn()
-          && exists(evalPath(evalId))
+          && canSeeEvalId(evalId)
           && validContribution(request.resource.data)
           && request.resource.data.authorEmail == request.auth.token.email
           && request.resource.data.rev == 1
@@ -127,6 +176,7 @@ service cloud.firestore {
           && existsAfter(activityPath(evalId, cid + '_1'))
           && getAfter(activityPath(evalId, cid + '_1')).data.type == 'added';
         allow update: if signedIn()
+          && canSeeEvalId(evalId)
           && resource.data.authorEmail == request.auth.token.email
           && resource.data.retracted == false
           && validContribution(request.resource.data)
