@@ -316,6 +316,8 @@ body {
 .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); padding: 4px 9px; border-radius: 6px; }
 .modal-close:hover { background: var(--surface-2); color: var(--gold-hi); }
 .modal-close:focus-visible { outline: none; box-shadow: var(--focus); }
+.modal-box.modal-sm { max-width: 440px; }
+.modal-box.modal-sm .modal-header h2 { font-size: 24px; }
 
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
 @media (max-width: 480px) { .detail-grid { grid-template-columns: 1fr; } }
@@ -545,12 +547,12 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 }
 
 /* sound on/off button */
-.fx-mute, .theme-toggle {
+.fx-mute, .theme-toggle, .pw-btn {
   display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0;
   border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s;
 }
-.fx-mute:hover, .theme-toggle:hover { color: var(--gold-hi); border-color: var(--gold); }
-.fx-mute:focus-visible, .theme-toggle:focus-visible { outline: none; box-shadow: var(--focus); }
+.fx-mute:hover, .theme-toggle:hover, .pw-btn:hover { color: var(--gold-hi); border-color: var(--gold); }
+.fx-mute:focus-visible, .theme-toggle:focus-visible, .pw-btn:focus-visible { outline: none; box-shadow: var(--focus); }
 .theme-toggle .moon { display: none; }
 :root[data-theme="light"] .theme-toggle .sun { display: none; }
 :root[data-theme="light"] .theme-toggle .moon { display: block; }
@@ -686,7 +688,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
   .topbar-brand { font-size: 21px; letter-spacing: 5px; }
   .topbar-user { gap: 6px; min-width: 0; }
   .topbar-user .badge-admin { padding: 3px 8px; letter-spacing: 0.6px; }
-  .topbar .fx-mute, .topbar .theme-toggle { width: 30px; height: 30px; }
+  .topbar .fx-mute, .topbar .theme-toggle, .topbar .pw-btn { width: 30px; height: 30px; }
   .topbar .btn-sm { padding: 6px 10px; }
   .page-title { font-size: 32px; }
   .login-card { padding: 38px 24px 32px; }
@@ -793,6 +795,9 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
       </button>
       <button type="button" class="fx-mute" aria-label="Toggle sound" aria-pressed="false" onclick="PrideFx.toggleMute()">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor" stroke="none"/><path class="waves" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="slash" d="M16 9l5 6M21 9l-5 6"/></svg>
+      </button>
+      <button type="button" class="pw-btn" aria-label="Change password" title="Change password" onclick="openPasswordModal()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M16 7l3 3M14 9l2 2"/></svg>
       </button>
       <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign Out</button>
     </div>
@@ -1157,6 +1162,35 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
   </div>
 </div>
 
+<!-- ─── CHANGE PASSWORD MODAL ─── -->
+<div class="modal-overlay" id="pw-modal" onclick="if (event.target.id === 'pw-modal') closePasswordModal()">
+  <div class="modal-box modal-sm" role="dialog" aria-modal="true" aria-labelledby="pw-title">
+    <div class="modal-header">
+      <h2 id="pw-title">Change Password</h2>
+      <button class="modal-close" onclick="closePasswordModal()" aria-label="Close">✕</button>
+    </div>
+    <form id="pw-form" onsubmit="changePassword(); return false;" autocomplete="on">
+      <input type="email" id="pw-username" autocomplete="username" hidden>
+      <div class="field">
+        <label for="pw-current">Current Password</label>
+        <input type="password" id="pw-current" autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label for="pw-new">New Password</label>
+        <input type="password" id="pw-new" autocomplete="new-password" aria-describedby="pw-rule">
+        <small class="field-hint" id="pw-rule">At least 8 characters.</small>
+      </div>
+      <div class="field">
+        <label for="pw-confirm">Confirm New Password</label>
+        <input type="password" id="pw-confirm" autocomplete="new-password">
+      </div>
+      <div class="error-msg" id="pw-error" role="alert"></div>
+      <div class="success-msg" id="pw-success" role="status">Password changed. Use your new password next time you sign in.</div>
+      <button type="submit" class="btn btn-primary btn-full" id="pw-submit" style="margin-top:4px">Update Password</button>
+    </form>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════════ EMAILJS SDK ══════════ -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
@@ -1312,6 +1346,7 @@ async function signIn() {
   }
 }
 function signOut() {
+  closePasswordModal();
   auth.signOut();
 }
 function showReset() {
@@ -1333,6 +1368,63 @@ async function sendReset() {
     err.classList.add('show');
   }
 }
+// ── Change password (signed in). Firebase requires a recent sign-in to change a password,
+// so the user confirms their current password first.
+const PW_MIN = 8;
+function openPasswordModal() {
+  document.getElementById('pw-form').reset();
+  document.getElementById('pw-username').value = currentUser ? currentUser.email : '';
+  ['pw-error', 'pw-success'].forEach(id => document.getElementById(id).classList.remove('show'));
+  document.getElementById('pw-submit').disabled = false;
+  document.getElementById('pw-modal').classList.add('open');
+  setTimeout(() => document.getElementById('pw-current').focus(), 50);
+}
+function closePasswordModal() {
+  document.getElementById('pw-modal').classList.remove('open');
+  document.getElementById('pw-form').reset();
+}
+async function changePassword() {
+  const current = document.getElementById('pw-current').value;
+  const next = document.getElementById('pw-new').value;
+  const confirmPw = document.getElementById('pw-confirm').value;
+  const err = document.getElementById('pw-error');
+  const ok = document.getElementById('pw-success');
+  const btn = document.getElementById('pw-submit');
+  const fail = msg => { err.textContent = msg; err.classList.add('show'); };
+  err.classList.remove('show'); ok.classList.remove('show');
+
+  if (!current) return fail('Enter your current password.');
+  if (next.length < PW_MIN) return fail(`Your new password needs at least ${PW_MIN} characters.`);
+  if (next !== confirmPw) return fail('The new passwords do not match.');
+  if (next === current) return fail('Choose a password different from your current one.');
+
+  const user = auth.currentUser;
+  if (!user) return fail('Your session has ended. Sign in again, then try once more.');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const cred = firebase.auth.EmailAuthProvider.credential(user.email, current);
+    await user.reauthenticateWithCredential(cred);
+    await user.updatePassword(next);
+    document.getElementById('pw-form').reset();
+    ok.classList.add('show');
+    setTimeout(closePasswordModal, 2200);
+  } catch (e) {
+    console.error(e);
+    const map = {
+      'auth/wrong-password': 'Your current password is not correct.',
+      'auth/invalid-credential': 'Your current password is not correct.',
+      'auth/invalid-login-credentials': 'Your current password is not correct.',
+      'auth/weak-password': 'That password is too weak. Try a longer one.',
+      'auth/requires-recent-login': 'For security, sign out and back in, then change your password.',
+    };
+    fail(map[e.code] || humanAuthError(e.code));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Update Password';
+  }
+}
+
 function humanAuthError(code) {
   const map = {
     'auth/invalid-credential': 'Incorrect email or password.',
@@ -2045,7 +2137,7 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('view-reset').style.display === 'none') signIn();
     else sendReset();
   }
-  if (e.key === 'Escape') closeDetailModal();
+  if (e.key === 'Escape') { closeDetailModal(); closePasswordModal(); }
 });
 </script>
 <script>
