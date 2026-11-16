@@ -1766,10 +1766,13 @@ async function submitEvaluation() {
   // Saved. The draft is no longer needed; the email is best-effort.
   clearDraft();
   loadEvals();
-  const emailed = await sendEmailNotification(evaluation);
+  const team = myTeams.find(t => t.id === evaluation.teamId);
+  const recipients = PrideTeams.alertRecipients(team, ADMIN_EMAIL, currentUser.email);
+  const emailed = await sendEmailNotification(evaluation, recipients);
+  const sentTo = team ? `the ${team.name} team and ${ADMIN_EMAIL}` : ADMIN_EMAIL;
   ok.textContent = emailed
-    ? `✓ Evaluation submitted for ${tmName} (${currentPeriod}-Day). A copy has been sent to ${ADMIN_EMAIL}.`
-    : `✓ Evaluation for ${tmName} (${currentPeriod}-Day) was saved, but the email notification to ${ADMIN_EMAIL} failed. It is available in All Evaluations.`;
+    ? `✓ Evaluation submitted for ${tmName} (${currentPeriod}-Day). An alert has been emailed to ${sentTo}.`
+    : `✓ Evaluation for ${tmName} (${currentPeriod}-Day) was saved, but the email alert to ${sentTo} failed. It is available in the evaluations list.`;
   ok.classList.add('show');
   PrideFx.submitSuccess(btn);
   lbl.textContent = 'Submit Evaluation';
@@ -1778,7 +1781,8 @@ async function submitEvaluation() {
 }
 
 // Returns true if the email was sent, false otherwise (never throws)
-async function sendEmailNotification(ev) {
+// Goes to the admin and the evaluation's team, as one email (one EmailJS send)
+async function sendEmailNotification(ev, recipients = [ADMIN_EMAIL]) {
   try {
     const flaggedSkills = PrideSkills.flaggedSkills(ev.softSkills);
     const subject = `PRIDE Eval: ${ev.tmName} — ${ev.period}-Day | ${ev.outlet}` + (flaggedSkills.length ? ' | ⚠ Critical skill flagged' : '');
@@ -1786,6 +1790,7 @@ async function sendEmailNotification(ev) {
     const body = [
       `PRIDE Training Log — ${ev.period}-Day Evaluation`,
       `Submitted by: ${ev.submittedByName}`,
+      `View it and add your feedback: ${location.origin}${location.pathname}`,
       ``,
       `TEAM MEMBER: ${ev.tmName}`,
       `Outlet: ${ev.outlet}`,
@@ -1827,7 +1832,7 @@ async function sendEmailNotification(ev) {
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
         subject,
         body,
-        to_email: ADMIN_EMAIL,
+        to_email: recipients.join(','),
       }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Email request timed out')), 10000)),
     ]);
