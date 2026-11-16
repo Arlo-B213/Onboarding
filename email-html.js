@@ -2,7 +2,8 @@
    in Node. Loaded in the browser as the global `PrideEmail`; needs PrideSkills (softskills.js).
 
    Email clients ignore <style> blocks and modern CSS, so everything is inline and laid out with
-   tables, 600px wide. Every value from the evaluation is escaped. */
+   tables, 600px wide. Every value from the evaluation is escaped. The result is an HTML fragment
+   (no <html>/<body>) for the EmailJS template, whose content is just {{{body_html}}}. */
 const PrideEmail = (() => {
   const Skills = (typeof PrideSkills !== 'undefined') ? PrideSkills
     : (typeof require === 'function' ? require('./softskills.js') : null);
@@ -120,9 +121,8 @@ const PrideEmail = (() => {
           <a href="${esc(appUrl)}" style="${FONT}display:inline-block;padding:12px 22px;font-size:14px;font-weight:bold;color:${C.dark};text-decoration:none;border-radius:6px;">View evaluation &amp; add feedback</a>
         </td></tr></table></td></tr>` : '';
 
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:${C.page};">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page};"><tr><td align="center" style="padding:24px 12px;">
+    // A fragment, not a full page: EmailJS places it inside its own email wrapper
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.page};"><tr><td align="center" style="padding:24px 12px;">
   <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${C.paper};border:1px solid ${C.line};border-radius:10px;overflow:hidden;">
     <tr><td style="background:${C.dark};padding:22px 32px;">
       <div style="font-family:Georgia,'Times New Roman',serif;font-size:24px;letter-spacing:6px;color:${C.gold};font-weight:bold;">PRIDE</div>
@@ -144,8 +144,7 @@ const PrideEmail = (() => {
       </div>
     </td></tr>
   </table>
-</td></tr></table>
-</body></html>`;
+</td></tr></table>`;
   }
 
   return { buildHtml, esc };
