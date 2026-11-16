@@ -63,3 +63,13 @@ describe('sortTeams', () => {
     assert.equal(teams[0].name, 'b');
   });
 });
+
+describe('alertRecipients', () => {
+  const team = { memberEmails: ['a@x.com', 'b@x.com', 'boss@x.com'] };
+  it('sends to the admin and the team, but not the submitter', () => {
+    assert.deepEqual(T.alertRecipients(team, 'Boss@x.com', 'A@x.com'), ['boss@x.com', 'b@x.com']);
+  });
+  it('sends only to the admin when there is no team', () => {
+    assert.deepEqual(T.alertRecipients(null, 'boss@x.com', 'a@x.com'), ['boss@x.com']);
+  });
+});
