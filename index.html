@@ -1222,9 +1222,15 @@ const FIREBASE_CONFIG = {
   appId: "1:152179804312:web:7ae66d392bfef925b1e8ed"
 };
 
-// Admin email address (gets notified on every submission)
-const ADMIN_EMAIL = "arlo.bedolla@gmail.com";
-const ADMIN_EMAILS = ["arlo.bedolla@gmail.com", "abedolla@pechanga.com"];
+// Admins who get an email alert for every submission (the evaluation's team is alerted too)
+const ALERT_EMAILS = ["arlo.bedolla@gmail.com", "abedolla@pechanga.com"];
+// Everyone with admin access (see every team, the Activity and Teams tabs).
+// Must match the list in firestore.rules. Only ALERT_EMAILS get the submission emails.
+const ADMIN_EMAILS = [
+  "arlo.bedolla@gmail.com", "abedolla@pechanga.com",
+  "apena@pechanga.com",   // Alex Pena (Director)
+  "wallen@pechanga.com",  // Wayne Allen (Director)
+];
 
 // Set false once Firebase is configured
 const SHOW_SETUP = false;
@@ -1767,9 +1773,9 @@ async function submitEvaluation() {
   clearDraft();
   loadEvals();
   const team = myTeams.find(t => t.id === evaluation.teamId);
-  const recipients = PrideTeams.alertRecipients(team, ADMIN_EMAIL, currentUser.email);
+  const recipients = PrideTeams.alertRecipients(team, ALERT_EMAILS, currentUser.email);
   const emailed = await sendEmailNotification(evaluation, recipients);
-  const sentTo = team ? `the ${team.name} team and ${ADMIN_EMAIL}` : ADMIN_EMAIL;
+  const sentTo = team ? `the ${team.name} team and the admins` : 'the admins';
   ok.textContent = emailed
     ? `✓ Evaluation submitted for ${tmName} (${currentPeriod}-Day). An alert has been emailed to ${sentTo}.`
     : `✓ Evaluation for ${tmName} (${currentPeriod}-Day) was saved, but the email alert to ${sentTo} failed. It is available in the evaluations list.`;
@@ -1782,7 +1788,7 @@ async function submitEvaluation() {
 
 // Returns true if the email was sent, false otherwise (never throws)
 // Goes to the admin and the evaluation's team, as one email (one EmailJS send)
-async function sendEmailNotification(ev, recipients = [ADMIN_EMAIL]) {
+async function sendEmailNotification(ev, recipients = ALERT_EMAILS) {
   try {
     const flaggedSkills = PrideSkills.flaggedSkills(ev.softSkills);
     const subject = `PRIDE Eval: ${ev.tmName} — ${ev.period}-Day | ${ev.outlet}` + (flaggedSkills.length ? ' | ⚠ Critical skill flagged' : '');

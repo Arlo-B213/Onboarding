@@ -8,7 +8,9 @@ service cloud.firestore {
       return request.auth != null
         && request.auth.token.email.lower() in [
           'arlo.bedolla@gmail.com',
-          'abedolla@pechanga.com'
+          'abedolla@pechanga.com',
+          'apena@pechanga.com',   // Alex Pena (Director)
+          'wallen@pechanga.com'   // Wayne Allen (Director)
         ];
     }
     function signedIn() { return request.auth != null; }
