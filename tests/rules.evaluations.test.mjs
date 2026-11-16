@@ -38,6 +38,11 @@ describe('evaluations: read', () => {
     await seedEvaluation(env);
     await assertSucceeds(getDoc(doc(dbAs(env, ADMIN), 'evaluations', 'e1')));
   });
+  it('the directors are admins and can read any evaluation', async () => {
+    await seedEvaluation(env);
+    await assertSucceeds(getDoc(doc(dbAs(env, 'apena@pechanga.com'), 'evaluations', 'e1')));
+    await assertSucceeds(getDoc(doc(dbAs(env, 'wallen@pechanga.com'), 'evaluations', 'e1')));
+  });
   it('an evaluation with no team is admin-only', async () => {
     await seedEvaluation(env, { evalOver: { teamId: undefined } });
     await assertFails(getDoc(doc(dbAs(env, LEADER_A), 'evaluations', 'e1')));

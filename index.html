@@ -316,6 +316,8 @@ body {
 .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); padding: 4px 9px; border-radius: 6px; }
 .modal-close:hover { background: var(--surface-2); color: var(--gold-hi); }
 .modal-close:focus-visible { outline: none; box-shadow: var(--focus); }
+.modal-box.modal-sm { max-width: 440px; }
+.modal-box.modal-sm .modal-header h2 { font-size: 24px; }
 
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
 @media (max-width: 480px) { .detail-grid { grid-template-columns: 1fr; } }
@@ -545,12 +547,12 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 }
 
 /* sound on/off button */
-.fx-mute, .theme-toggle {
+.fx-mute, .theme-toggle, .pw-btn {
   display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0;
   border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s;
 }
-.fx-mute:hover, .theme-toggle:hover { color: var(--gold-hi); border-color: var(--gold); }
-.fx-mute:focus-visible, .theme-toggle:focus-visible { outline: none; box-shadow: var(--focus); }
+.fx-mute:hover, .theme-toggle:hover, .pw-btn:hover { color: var(--gold-hi); border-color: var(--gold); }
+.fx-mute:focus-visible, .theme-toggle:focus-visible, .pw-btn:focus-visible { outline: none; box-shadow: var(--focus); }
 .theme-toggle .moon { display: none; }
 :root[data-theme="light"] .theme-toggle .sun { display: none; }
 :root[data-theme="light"] .theme-toggle .moon { display: block; }
@@ -629,6 +631,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 .sig-view-name { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--text); }
 .sig-view-meta { font-size: 11px; color: var(--muted); letter-spacing: 0.3px; }
 .modal-actions { display: flex; align-items: center; gap: 10px; }
+.modal-actions .btn[hidden] { display: none; }
 
 /* ══ COMPETENCY COMMENTS ══ */
 .comp-why { margin-top: 10px; }
@@ -693,7 +696,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
   .topbar-brand { font-size: 21px; letter-spacing: 5px; }
   .topbar-user { gap: 6px; min-width: 0; }
   .topbar-user .badge-admin { padding: 3px 8px; letter-spacing: 0.6px; }
-  .topbar .fx-mute, .topbar .theme-toggle { width: 30px; height: 30px; }
+  .topbar .fx-mute, .topbar .theme-toggle, .topbar .pw-btn { width: 30px; height: 30px; }
   .topbar .btn-sm { padding: 6px 10px; }
   .page-title { font-size: 32px; }
   .login-card { padding: 38px 24px 32px; }
@@ -800,6 +803,9 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
       </button>
       <button type="button" class="fx-mute" aria-label="Toggle sound" aria-pressed="false" onclick="PrideFx.toggleMute()">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor" stroke="none"/><path class="waves" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="slash" d="M16 9l5 6M21 9l-5 6"/></svg>
+      </button>
+      <button type="button" class="pw-btn" aria-label="Change password" title="Change password" onclick="openPasswordModal()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M16 7l3 3M14 9l2 2"/></svg>
       </button>
       <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign Out</button>
     </div>
@@ -1163,10 +1169,40 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
       <h2 id="modal-title">Evaluation Detail</h2>
       <div class="modal-actions">
         <button type="button" class="btn btn-outline btn-sm" id="pdf-btn" onclick="downloadEvaluationPdf()">⬇ Download PDF</button>
+        <button type="button" class="btn btn-danger-ghost btn-sm" id="delete-eval-btn" onclick="deleteEvaluation()" hidden>Delete</button>
         <button class="modal-close" onclick="closeDetailModal()" aria-label="Close">✕</button>
       </div>
     </div>
     <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ─── CHANGE PASSWORD MODAL ─── -->
+<div class="modal-overlay" id="pw-modal" onclick="if (event.target.id === 'pw-modal') closePasswordModal()">
+  <div class="modal-box modal-sm" role="dialog" aria-modal="true" aria-labelledby="pw-title">
+    <div class="modal-header">
+      <h2 id="pw-title">Change Password</h2>
+      <button class="modal-close" onclick="closePasswordModal()" aria-label="Close">✕</button>
+    </div>
+    <form id="pw-form" onsubmit="changePassword(); return false;" autocomplete="on">
+      <input type="email" id="pw-username" autocomplete="username" hidden>
+      <div class="field">
+        <label for="pw-current">Current Password</label>
+        <input type="password" id="pw-current" autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label for="pw-new">New Password</label>
+        <input type="password" id="pw-new" autocomplete="new-password" aria-describedby="pw-rule">
+        <small class="field-hint" id="pw-rule">At least 8 characters.</small>
+      </div>
+      <div class="field">
+        <label for="pw-confirm">Confirm New Password</label>
+        <input type="password" id="pw-confirm" autocomplete="new-password">
+      </div>
+      <div class="error-msg" id="pw-error" role="alert"></div>
+      <div class="success-msg" id="pw-success" role="status">Password changed. Use your new password next time you sign in.</div>
+      <button type="submit" class="btn btn-primary btn-full" id="pw-submit" style="margin-top:4px">Update Password</button>
+    </form>
   </div>
 </div>
 
@@ -1185,6 +1221,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 <script src="teams-ui.js"></script>
 <script src="fx.js"></script>
 <script src="softskills.js"></script>
+<script src="email-html.js"></script>
 <script src="signature.js"></script>
 <script src="pdf.js"></script>
 
@@ -1202,9 +1239,15 @@ const FIREBASE_CONFIG = {
   appId: "1:152179804312:web:7ae66d392bfef925b1e8ed"
 };
 
-// Admin email address (gets notified on every submission)
-const ADMIN_EMAIL = "arlo.bedolla@gmail.com";
-const ADMIN_EMAILS = ["arlo.bedolla@gmail.com", "abedolla@pechanga.com"];
+// Admins who get an email alert for every submission (the evaluation's team is alerted too)
+const ALERT_EMAILS = ["arlo.bedolla@gmail.com", "abedolla@pechanga.com"];
+// Everyone with admin access (see every team, the Activity and Teams tabs).
+// Must match the list in firestore.rules. Only ALERT_EMAILS get the submission emails.
+const ADMIN_EMAILS = [
+  "arlo.bedolla@gmail.com", "abedolla@pechanga.com",
+  "apena@pechanga.com",   // Alex Pena (Director)
+  "wallen@pechanga.com",  // Wayne Allen (Director)
+];
 
 // Set false once Firebase is configured
 const SHOW_SETUP = false;
@@ -1329,6 +1372,7 @@ async function signIn() {
   }
 }
 function signOut() {
+  closePasswordModal();
   auth.signOut();
 }
 function showReset() {
@@ -1350,6 +1394,63 @@ async function sendReset() {
     err.classList.add('show');
   }
 }
+// ── Change password (signed in). Firebase requires a recent sign-in to change a password,
+// so the user confirms their current password first.
+const PW_MIN = 8;
+function openPasswordModal() {
+  document.getElementById('pw-form').reset();
+  document.getElementById('pw-username').value = currentUser ? currentUser.email : '';
+  ['pw-error', 'pw-success'].forEach(id => document.getElementById(id).classList.remove('show'));
+  document.getElementById('pw-submit').disabled = false;
+  document.getElementById('pw-modal').classList.add('open');
+  setTimeout(() => document.getElementById('pw-current').focus(), 50);
+}
+function closePasswordModal() {
+  document.getElementById('pw-modal').classList.remove('open');
+  document.getElementById('pw-form').reset();
+}
+async function changePassword() {
+  const current = document.getElementById('pw-current').value;
+  const next = document.getElementById('pw-new').value;
+  const confirmPw = document.getElementById('pw-confirm').value;
+  const err = document.getElementById('pw-error');
+  const ok = document.getElementById('pw-success');
+  const btn = document.getElementById('pw-submit');
+  const fail = msg => { err.textContent = msg; err.classList.add('show'); };
+  err.classList.remove('show'); ok.classList.remove('show');
+
+  if (!current) return fail('Enter your current password.');
+  if (next.length < PW_MIN) return fail(`Your new password needs at least ${PW_MIN} characters.`);
+  if (next !== confirmPw) return fail('The new passwords do not match.');
+  if (next === current) return fail('Choose a password different from your current one.');
+
+  const user = auth.currentUser;
+  if (!user) return fail('Your session has ended. Sign in again, then try once more.');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const cred = firebase.auth.EmailAuthProvider.credential(user.email, current);
+    await user.reauthenticateWithCredential(cred);
+    await user.updatePassword(next);
+    document.getElementById('pw-form').reset();
+    ok.classList.add('show');
+    setTimeout(closePasswordModal, 2200);
+  } catch (e) {
+    console.error(e);
+    const map = {
+      'auth/wrong-password': 'Your current password is not correct.',
+      'auth/invalid-credential': 'Your current password is not correct.',
+      'auth/invalid-login-credentials': 'Your current password is not correct.',
+      'auth/weak-password': 'That password is too weak. Try a longer one.',
+      'auth/requires-recent-login': 'For security, sign out and back in, then change your password.',
+    };
+    fail(map[e.code] || humanAuthError(e.code));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Update Password';
+  }
+}
+
 function humanAuthError(code) {
   const map = {
     'auth/invalid-credential': 'Incorrect email or password.',
@@ -1699,10 +1800,14 @@ async function submitEvaluation() {
     catch(e) { console.warn('Could not remove the submitted draft', e); }
     loadMyDrafts();
   }
-  const emailed = await sendEmailNotification(evaluation);
+  const team = myTeams.find(t => t.id === evaluation.teamId);
+  const recipients = PrideTeams.alertRecipients(team, ALERT_EMAILS, currentUser.email);
+  const emailResult = await sendEmailNotification(evaluation, recipients);
+  const emailed = emailResult === true;
+  const sentTo = team ? `the ${team.name} team and the admins` : 'the admins';
   ok.textContent = emailed
-    ? `✓ Evaluation submitted for ${tmName} (${currentPeriod}-Day). A copy has been sent to ${ADMIN_EMAIL}.`
-    : `✓ Evaluation for ${tmName} (${currentPeriod}-Day) was saved, but the email notification to ${ADMIN_EMAIL} failed. It is available in All Evaluations.`;
+    ? `✓ Evaluation submitted for ${tmName} (${currentPeriod}-Day). An alert has been emailed to ${sentTo}.`
+    : `✓ Evaluation for ${tmName} (${currentPeriod}-Day) was saved, but the email alert to ${sentTo} failed (${emailResult}). It is available in the evaluations list.`;
   ok.classList.add('show');
   PrideFx.submitSuccess(btn);
   lbl.textContent = 'Submit Evaluation';
@@ -1710,8 +1815,9 @@ async function submitEvaluation() {
   setTimeout(() => { clearForm(); btn.disabled = false; submitting = false; }, emailed ? 3000 : 6000);
 }
 
-// Returns true if the email was sent, false otherwise (never throws)
-async function sendEmailNotification(ev) {
+// Returns true if the email was sent, otherwise a short reason for the failure (never throws)
+// Goes to the admin and the evaluation's team, as one email (one EmailJS send)
+async function sendEmailNotification(ev, recipients = ALERT_EMAILS) {
   try {
     const flaggedSkills = PrideSkills.flaggedSkills(ev.softSkills);
     const subject = `PRIDE Eval: ${ev.tmName} — ${ev.period}-Day | ${ev.outlet}` + (flaggedSkills.length ? ' | ⚠ Critical skill flagged' : '');
@@ -1719,6 +1825,7 @@ async function sendEmailNotification(ev) {
     const body = [
       `PRIDE Training Log — ${ev.period}-Day Evaluation`,
       `Submitted by: ${ev.submittedByName}`,
+      `View it and add your feedback: ${location.origin}${location.pathname}`,
       ``,
       `TEAM MEMBER: ${ev.tmName}`,
       `Outlet: ${ev.outlet}`,
@@ -1759,15 +1866,23 @@ async function sendEmailNotification(ev) {
     await Promise.race([
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
         subject,
-        body,
-        to_email: ADMIN_EMAIL,
+        body,                                   // plain-text version
+        body_html: PrideEmail.buildHtml(ev, {   // the formatted email; template uses {{{body_html}}}
+          teamName: ev.teamId ? PrideTeams.teamLabel(myTeams, ev.teamId) : '',
+          appUrl: location.origin + location.pathname,
+        }),
+        to_email: recipients.join(','),
+        reply_to: ev.submittedBy || '',
+        from_name: 'PRIDE Training Log',
       }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Email request timed out')), 10000)),
     ]);
     return true;
   } catch(e) {
     console.warn('Email notification failed (non-blocking):', e);
-    return false;
+    // EmailJS rejects with { status, text }; other failures are ordinary Errors
+    const reason = e && (e.text || e.message) ? `${e.status ? 'EmailJS ' + e.status + ': ' : ''}${e.text || e.message}` : 'unknown error';
+    return reason.slice(0, 200);
   }
 }
 
@@ -2112,11 +2227,55 @@ async function downloadEvaluationPdf() {
   }
 }
 
+// Admins only. Removes the evaluation, its leader notes and its activity log in one batch, and
+// writes deletions/{id} (who, when, which team member) which the Activity tab shows. The rules
+// refuse the delete without that record.
+async function deleteEvaluation() {
+  const e = allEvals.find(x => x.id === detailEvalId);
+  if (!e || !currentIsAdmin) return;
+  const ok = confirm(`Delete the ${e.period}-Day evaluation for ${e.tmName}?\n\n`
+    + `This permanently removes the evaluation and all leader feedback on it. It cannot be undone.\n`
+    + `The Activity tab will record that you deleted it.`);
+  if (!ok) return;
+  const btn = document.getElementById('delete-eval-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const ref = db.collection('evaluations').doc(e.id);
+    const [notes, log] = await Promise.all([ref.collection('contributions').get(), ref.collection('activity').get()]);
+    const children = [...notes.docs, ...log.docs].map(d => d.ref);
+    if (children.length > 450) throw new Error('This evaluation has too much history to delete from the app. Delete it in the Firebase console.');
+    const batch = db.batch();
+    children.forEach(r => batch.delete(r));
+    batch.delete(ref);
+    batch.set(db.collection('deletions').doc(e.id), {
+      tmName: e.tmName || '', period: e.period || 0, outlet: e.outlet || '',
+      ...(e.teamId ? { teamId: e.teamId } : {}),
+      submittedBy: e.submittedBy || '', ...(e.submittedAt ? { submittedAt: e.submittedAt } : {}),
+      byEmail: currentUser.email, byName: currentUser.displayName || currentUser.email,
+      at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
+    allEvals = allEvals.filter(x => x.id !== e.id);
+    closeDetailModal();
+    filterEvals();
+  } catch (err) {
+    console.error(err);
+    alert('Could not delete the evaluation: ' + (err.message || err));
+    btn.disabled = false;
+    btn.textContent = 'Delete';
+  }
+}
+
 function openDetail(id) {
   const e = allEvals.find(x => x.id === id);
   if (!e) return;
   detailEvalId = id;
   document.getElementById('modal-title').textContent = `${e.tmName} — ${e.period}-Day Evaluation`;
+  const delBtn = document.getElementById('delete-eval-btn');
+  delBtn.hidden = !currentIsAdmin;
+  delBtn.disabled = false;
+  delBtn.textContent = 'Delete';
 
   const ratingLabel = v => PrideSkills.RATING_WORDS[v] || '—';
 
@@ -2201,7 +2360,7 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('view-reset').style.display === 'none') signIn();
     else sendReset();
   }
-  if (e.key === 'Escape') closeDetailModal();
+  if (e.key === 'Escape') { closeDetailModal(); closePasswordModal(); }
 });
 </script>
 <script>

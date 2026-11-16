@@ -60,7 +60,19 @@ const PrideTeams = (() => {
     return counts;
   }
 
-  return { MAX_NAME, MAX_MEMBERS, normalizeEmail, parseEmails, validateName, sortTeams, isMember,
+  // Who gets the "new evaluation" email: the alert admins (always), plus everyone on the
+  // evaluation's team except the leader who submitted it (they already know). Lowercase, no repeats.
+  function alertRecipients(team, alertEmails, submitterEmail) {
+    const me = normalizeEmail(submitterEmail);
+    const out = [];
+    [].concat(alertEmails || []).map(normalizeEmail)
+      .forEach(m => { if (m && !out.includes(m)) out.push(m); });
+    ((team && team.memberEmails) || []).map(normalizeEmail)
+      .forEach(m => { if (m && m !== me && !out.includes(m)) out.push(m); });
+    return out;
+  }
+
+  return { MAX_NAME, MAX_MEMBERS, normalizeEmail, alertRecipients, parseEmails, validateName, sortTeams, isMember,
            teamLabel, mergeEvals, countByTeam };
 })();
 
