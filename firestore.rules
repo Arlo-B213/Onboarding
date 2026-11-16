@@ -51,6 +51,9 @@ service cloud.firestore {
     function activityPath(evalId, aid) {
       return /databases/$(database)/documents/evaluations/$(evalId)/activity/$(aid);
     }
+    function deletionPath(evalId) {
+      return /databases/$(database)/documents/deletions/$(evalId);
+    }
 
     // ── contributions ──
     // `section` says which part of the evaluation a note is about. It is optional: notes saved
@@ -163,7 +166,11 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId'])
         && (!('teamId' in request.resource.data)
             || (request.resource.data.teamId is string && exists(teamPath(request.resource.data.teamId))));
-      allow delete: if false;
+      // Only an admin can delete an evaluation, and only together with a deletion record
+      // (deletions/{evalId}) written in the same batch, so every deletion leaves a trace.
+      allow delete: if isAdmin()
+        && existsAfter(deletionPath(evalId))
+        && getAfter(deletionPath(evalId)).data.byEmail == request.auth.token.email;
 
       match /contributions/{cid} {
         allow read: if signedIn() && canSeeEvalId(evalId);
@@ -194,7 +201,8 @@ service cloud.firestore {
           && existsAfter(activityPath(evalId, cid + '_' + string(request.resource.data.rev)))
           && getAfter(activityPath(evalId, cid + '_' + string(request.resource.data.rev))).data.type
                == (request.resource.data.retracted ? 'retracted' : 'edited');
-        allow delete: if false;
+        // Removed only when an admin deletes the whole evaluation
+        allow delete: if isAdmin();
       }
 
       match /activity/{activityId} {
@@ -203,8 +211,24 @@ service cloud.firestore {
           && validActivity(request.resource.data)
           && (submittedEntry(evalId, activityId, request.resource.data)
               || changeEntry(evalId, activityId, request.resource.data));
-        allow update, delete: if false;
+        allow update: if false;
+        // Removed only when an admin deletes the whole evaluation
+        allow delete: if isAdmin();
       }
+    }
+
+    // One record per deleted evaluation: who deleted it, when, and what it was. Written by an
+    // admin in the same batch as the delete, and never changed afterwards.
+    match /deletions/{evalId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && exists(evalPath(evalId))
+        && request.resource.data.keys().hasAll(['tmName', 'period', 'outlet', 'submittedBy', 'byEmail', 'byName', 'at'])
+        && request.resource.data.keys().hasOnly(['tmName', 'period', 'outlet', 'teamId', 'submittedBy', 'submittedAt', 'byEmail', 'byName', 'at'])
+        && request.resource.data.byEmail == request.auth.token.email
+        && request.resource.data.at == request.time
+        && request.resource.data.tmName == get(evalPath(evalId)).data.tmName;
+      allow update, delete: if false;
     }
 
     // Admin-only collection-group read for the global Activity feed
