@@ -273,8 +273,15 @@ async function loadActivityFeed() {
   const body = document.getElementById('activity-table-body');
   body.innerHTML = '<tr><td colspan="5"><div class="empty-state"><p>Loading activity…</p></div></td></tr>';
   try {
-    const snap = await db.collectionGroup('activity').orderBy('at', 'desc').limit(200).get();
-    renderActivityFeed(snap.docs.map(d => ({ id: d.id, evalId: d.ref.parent.parent.id, ...d.data() })));
+    const [snap, dels] = await Promise.all([
+      db.collectionGroup('activity').orderBy('at', 'desc').limit(200).get(),
+      db.collection('deletions').orderBy('at', 'desc').limit(200).get(),
+    ]);
+    const ms = r => (r.at && r.at.toMillis ? r.at.toMillis() : 0);
+    const rows = snap.docs.map(d => ({ id: d.id, evalId: d.ref.parent.parent.id, ...d.data() }))
+      .concat(dels.docs.map(d => ({ id: 'del_' + d.id, evalId: d.id, type: 'deleted', ...d.data() })))
+      .sort((a, b) => ms(b) - ms(a)).slice(0, 200);
+    renderActivityFeed(rows);
   } catch (e) {
     console.error(e);
     body.innerHTML = `<tr><td colspan="5" style="color:var(--danger);padding:20px;">Error loading activity: ${escHtml(e.message)}</td></tr>`;
@@ -288,6 +295,15 @@ function renderActivityFeed(rows) {
     return;
   }
   body.innerHTML = rows.map(r => {
+    if (r.type === 'deleted') {
+      return `<tr>
+        <td data-label="When">${fmtTime(r.at)}</td>
+        <td data-label="Who">${escHtml(r.byName || r.byEmail)}</td>
+        <td data-label="Action"><span style="color:var(--danger)">deleted the evaluation</span></td>
+        <td data-label="Evaluation"><span><strong>${escHtml(r.tmName)}</strong><br><small>${escHtml(r.period)}-Day · ${escHtml(r.outlet || '')}</small></span></td>
+        <td data-label="Details">Submitted by ${escHtml(r.submittedBy || '—')}. The evaluation and its feedback were removed.</td>
+      </tr>`;
+    }
     const ev = allEvals.find(x => x.id === r.evalId);
     const desc = PrideContrib.describeActivity(r);
     // The evaluation may be older than the 200 loaded; then show its id and no View button

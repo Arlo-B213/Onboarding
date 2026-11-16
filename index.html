@@ -631,6 +631,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 .sig-view-name { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--text); }
 .sig-view-meta { font-size: 11px; color: var(--muted); letter-spacing: 0.3px; }
 .modal-actions { display: flex; align-items: center; gap: 10px; }
+.modal-actions .btn[hidden] { display: none; }
 
 /* ══ COMPETENCY COMMENTS ══ */
 .comp-why { margin-top: 10px; }
@@ -1155,6 +1156,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
       <h2 id="modal-title">Evaluation Detail</h2>
       <div class="modal-actions">
         <button type="button" class="btn btn-outline btn-sm" id="pdf-btn" onclick="downloadEvaluationPdf()">⬇ Download PDF</button>
+        <button type="button" class="btn btn-danger-ghost btn-sm" id="delete-eval-btn" onclick="deleteEvaluation()" hidden>Delete</button>
         <button class="modal-close" onclick="closeDetailModal()" aria-label="Close">✕</button>
       </div>
     </div>
@@ -2069,11 +2071,55 @@ async function downloadEvaluationPdf() {
   }
 }
 
+// Admins only. Removes the evaluation, its leader notes and its activity log in one batch, and
+// writes deletions/{id} (who, when, which team member) which the Activity tab shows. The rules
+// refuse the delete without that record.
+async function deleteEvaluation() {
+  const e = allEvals.find(x => x.id === detailEvalId);
+  if (!e || !currentIsAdmin) return;
+  const ok = confirm(`Delete the ${e.period}-Day evaluation for ${e.tmName}?\n\n`
+    + `This permanently removes the evaluation and all leader feedback on it. It cannot be undone.\n`
+    + `The Activity tab will record that you deleted it.`);
+  if (!ok) return;
+  const btn = document.getElementById('delete-eval-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const ref = db.collection('evaluations').doc(e.id);
+    const [notes, log] = await Promise.all([ref.collection('contributions').get(), ref.collection('activity').get()]);
+    const children = [...notes.docs, ...log.docs].map(d => d.ref);
+    if (children.length > 450) throw new Error('This evaluation has too much history to delete from the app. Delete it in the Firebase console.');
+    const batch = db.batch();
+    children.forEach(r => batch.delete(r));
+    batch.delete(ref);
+    batch.set(db.collection('deletions').doc(e.id), {
+      tmName: e.tmName || '', period: e.period || 0, outlet: e.outlet || '',
+      ...(e.teamId ? { teamId: e.teamId } : {}),
+      submittedBy: e.submittedBy || '', ...(e.submittedAt ? { submittedAt: e.submittedAt } : {}),
+      byEmail: currentUser.email, byName: currentUser.displayName || currentUser.email,
+      at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
+    allEvals = allEvals.filter(x => x.id !== e.id);
+    closeDetailModal();
+    filterEvals();
+  } catch (err) {
+    console.error(err);
+    alert('Could not delete the evaluation: ' + (err.message || err));
+    btn.disabled = false;
+    btn.textContent = 'Delete';
+  }
+}
+
 function openDetail(id) {
   const e = allEvals.find(x => x.id === id);
   if (!e) return;
   detailEvalId = id;
   document.getElementById('modal-title').textContent = `${e.tmName} — ${e.period}-Day Evaluation`;
+  const delBtn = document.getElementById('delete-eval-btn');
+  delBtn.hidden = !currentIsAdmin;
+  delBtn.disabled = false;
+  delBtn.textContent = 'Delete';
 
   const ratingLabel = v => PrideSkills.RATING_WORDS[v] || '—';
 
