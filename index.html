@@ -1774,11 +1774,12 @@ async function submitEvaluation() {
   loadEvals();
   const team = myTeams.find(t => t.id === evaluation.teamId);
   const recipients = PrideTeams.alertRecipients(team, ALERT_EMAILS, currentUser.email);
-  const emailed = await sendEmailNotification(evaluation, recipients);
+  const emailResult = await sendEmailNotification(evaluation, recipients);
+  const emailed = emailResult === true;
   const sentTo = team ? `the ${team.name} team and the admins` : 'the admins';
   ok.textContent = emailed
     ? `✓ Evaluation submitted for ${tmName} (${currentPeriod}-Day). An alert has been emailed to ${sentTo}.`
-    : `✓ Evaluation for ${tmName} (${currentPeriod}-Day) was saved, but the email alert to ${sentTo} failed. It is available in the evaluations list.`;
+    : `✓ Evaluation for ${tmName} (${currentPeriod}-Day) was saved, but the email alert to ${sentTo} failed (${emailResult}). It is available in the evaluations list.`;
   ok.classList.add('show');
   PrideFx.submitSuccess(btn);
   lbl.textContent = 'Submit Evaluation';
@@ -1786,7 +1787,7 @@ async function submitEvaluation() {
   setTimeout(() => { clearForm(); btn.disabled = false; submitting = false; }, emailed ? 3000 : 6000);
 }
 
-// Returns true if the email was sent, false otherwise (never throws)
+// Returns true if the email was sent, otherwise a short reason for the failure (never throws)
 // Goes to the admin and the evaluation's team, as one email (one EmailJS send)
 async function sendEmailNotification(ev, recipients = ALERT_EMAILS) {
   try {
@@ -1845,7 +1846,9 @@ async function sendEmailNotification(ev, recipients = ALERT_EMAILS) {
     return true;
   } catch(e) {
     console.warn('Email notification failed (non-blocking):', e);
-    return false;
+    // EmailJS rejects with { status, text }; other failures are ordinary Errors
+    const reason = e && (e.text || e.message) ? `${e.status ? 'EmailJS ' + e.status + ': ' : ''}${e.text || e.message}` : 'unknown error';
+    return reason.slice(0, 200);
   }
 }
 
