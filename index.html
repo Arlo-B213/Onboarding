@@ -1224,7 +1224,13 @@ const FIREBASE_CONFIG = {
 
 // Admin email address (gets notified on every submission)
 const ADMIN_EMAIL = "arlo.bedolla@gmail.com";
-const ADMIN_EMAILS = ["arlo.bedolla@gmail.com", "abedolla@pechanga.com"];
+// Everyone with admin access (see every team, the Activity and Teams tabs).
+// Must match the list in firestore.rules. Only ADMIN_EMAIL gets the submission emails.
+const ADMIN_EMAILS = [
+  "arlo.bedolla@gmail.com", "abedolla@pechanga.com",
+  "apena@pechanga.com",   // Alex Pena (Director)
+  "wallen@pechanga.com",  // Wayne Allen (Director)
+];
 
 // Set false once Firebase is configured
 const SHOW_SETUP = false;
