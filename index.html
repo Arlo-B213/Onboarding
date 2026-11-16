@@ -1205,6 +1205,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 <script src="teams-ui.js"></script>
 <script src="fx.js"></script>
 <script src="softskills.js"></script>
+<script src="email-html.js"></script>
 <script src="signature.js"></script>
 <script src="pdf.js"></script>
 
@@ -1838,8 +1839,14 @@ async function sendEmailNotification(ev, recipients = ALERT_EMAILS) {
     await Promise.race([
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
         subject,
-        body,
+        body,                                   // plain-text version
+        body_html: PrideEmail.buildHtml(ev, {   // the formatted email; template uses {{{body_html}}}
+          teamName: ev.teamId ? PrideTeams.teamLabel(myTeams, ev.teamId) : '',
+          appUrl: location.origin + location.pathname,
+        }),
         to_email: recipients.join(','),
+        reply_to: ev.submittedBy || '',
+        from_name: 'PRIDE Training Log',
       }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Email request timed out')), 10000)),
     ]);
