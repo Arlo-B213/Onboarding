@@ -142,6 +142,15 @@ const PrideContrib = (() => {
       }
       case 'retracted':
         return { label: sec === GENERAL ? 'retracted their input' : `retracted their note${on}`, lines: [`Was: ${e.before.note || ratingText(e.before.ratings)}`] };
+      case 'details': {
+        // Corrected header details: list each field that changed
+        const labels = { tmName: 'Name', position: 'Position', outlet: 'Outlet', area: 'Area',
+          startDate: 'Start date', evalDate: 'Eval date', period: 'Period' };
+        const b = e.before || {}, a = e.after || {};
+        const lines = Object.keys(labels).filter(k => String(b[k] ?? '') !== String(a[k] ?? ''))
+          .map(k => `${labels[k]}: ${b[k] === '' || b[k] == null ? '—' : b[k]} → ${a[k] === '' || a[k] == null ? '—' : a[k]}`);
+        return { label: 'edited the details', lines };
+      }
       default:
         return { label: String(e.type), lines: [] };
     }
