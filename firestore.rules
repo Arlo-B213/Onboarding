@@ -94,10 +94,46 @@ service cloud.firestore {
       return d.keys().hasAll(['type', 'contributionId', 'rev', 'byEmail', 'byName', 'at', 'before', 'after'])
         && d.keys().hasOnly(['type', 'contributionId', 'rev', 'byEmail', 'byName', 'at', 'before', 'after', 'section'])
         && (!('section' in d) || validSection(d.section))
-        && d.type in ['submitted', 'added', 'edited', 'retracted']
+        && d.type in ['submitted', 'added', 'edited', 'retracted', 'details']
         && d.byEmail == request.auth.token.email
         && d.byName is string && d.byName.size() <= 200
         && d.at == request.time;
+    }
+
+    // ── editing an evaluation's header details ──
+    // The submitter (still on the team) or an admin may correct these fields after submitting.
+    // Ratings, comments and signatures never change. Each edit bumps detailsRev and must be
+    // logged as activity 'details_<rev>' with the full before/after values.
+    function detailFields() {
+      return ['tmName', 'position', 'outlet', 'area', 'startDate', 'evalDate', 'period'];
+    }
+    function optStr(d, k) {
+      return !(k in d) || (d[k] is string && d[k].size() <= 200);
+    }
+    function validDetails(d) {
+      return d.tmName is string && d.tmName.size() > 0 && d.tmName.size() <= 100
+        && d.period in [14, 30, 45, 60]
+        && optStr(d, 'position') && optStr(d, 'outlet') && optStr(d, 'area')
+        && optStr(d, 'startDate') && optStr(d, 'evalDate');
+    }
+    // A before/after snapshot m equals evaluation e on every detail field (missing = '' / 0)
+    function sameDetails(m, e) {
+      return m is map
+        && m.keys().hasAll(detailFields()) && m.keys().hasOnly(detailFields())
+        && m.tmName == e.get('tmName', '') && m.position == e.get('position', '')
+        && m.outlet == e.get('outlet', '') && m.area == e.get('area', '')
+        && m.startDate == e.get('startDate', '') && m.evalDate == e.get('evalDate', '')
+        && m.period == e.get('period', 0);
+    }
+    function detailsEntry(evalId, aid, d) {
+      return d.type == 'details'
+        && d.contributionId == null && d.rev is int
+        && aid == 'details_' + string(d.rev)
+        && existsAfter(evalPath(evalId))
+        && getAfter(evalPath(evalId)).data.get('detailsRev', 0) == d.rev
+        && getAfter(evalPath(evalId)).data.get('editedBy', '') == d.byEmail
+        && sameDetails(d.before, get(evalPath(evalId)).data)
+        && sameDetails(d.after, getAfter(evalPath(evalId)).data);
     }
 
     function submittedEntry(evalId, aid, d) {
@@ -160,8 +196,19 @@ service cloud.firestore {
                 || (request.resource.data.teamId is string && exists(teamPath(request.resource.data.teamId))))))
         && existsAfter(activityPath(evalId, 'submitted'))
         && getAfter(activityPath(evalId, 'submitted')).data.type == 'submitted';
-      // The evaluation itself never changes. The one exception: an admin can move it to
-      // another team, or take it off its team.
+      // Ratings, comments and signatures never change after submitting. Two kinds of update:
+      // 1) Correcting the header details (see detailsEntry): the submitter while still on the
+      // team, or an admin. Logged in the same batch.
+      allow update: if signedIn()
+        && (isAdmin() || (resource.data.submittedBy == request.auth.token.email && canSeeEval(resource.data)))
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['tmName', 'position', 'outlet', 'area', 'startDate', 'evalDate', 'period', 'detailsRev', 'editedAt', 'editedBy'])
+        && validDetails(request.resource.data)
+        && request.resource.data.detailsRev == resource.data.get('detailsRev', 0) + 1
+        && request.resource.data.editedAt == request.time
+        && request.resource.data.editedBy == request.auth.token.email
+        && existsAfter(activityPath(evalId, 'details_' + string(request.resource.data.detailsRev)));
+      // 2) An admin moving it to another team, or taking it off its team.
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId'])
         && (!('teamId' in request.resource.data)
@@ -210,7 +257,8 @@ service cloud.firestore {
         allow create: if signedIn()
           && validActivity(request.resource.data)
           && (submittedEntry(evalId, activityId, request.resource.data)
-              || changeEntry(evalId, activityId, request.resource.data));
+              || changeEntry(evalId, activityId, request.resource.data)
+              || detailsEntry(evalId, activityId, request.resource.data));
         allow update: if false;
         // Removed only when an admin deletes the whole evaluation
         allow delete: if isAdmin();
