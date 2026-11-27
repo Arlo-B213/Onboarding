@@ -633,6 +633,38 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 .modal-actions { display: flex; align-items: center; gap: 10px; }
 .modal-actions .btn[hidden] { display: none; }
 
+/* grouped list: 14 / 30 / 45 / 60 progress pills */
+.prog { display: flex; gap: 6px; flex-wrap: wrap; }
+.prog-pill {
+  display: inline-flex; align-items: center; gap: 4px; min-width: 40px; justify-content: center;
+  padding: 4px 10px; border-radius: 20px; font: inherit; font-size: 11px; font-weight: 700; letter-spacing: .4px;
+  border: 1px solid var(--line); background: transparent; color: var(--mid); white-space: nowrap;
+}
+.prog-pill.done { background: var(--gold-grad); color: var(--on-gold); border-color: transparent; cursor: pointer; }
+.prog-pill.done:hover { filter: brightness(1.08); }
+.prog-pill.done:focus-visible { outline: none; box-shadow: var(--focus); }
+.prog-pill.flagged { box-shadow: 0 0 0 2px var(--danger); }
+.prog-pill .prog-count { font-size: 10px; opacity: .8; }
+.prog-pill.missing { border-style: dashed; opacity: .55; }
+@media (min-width: 641px) {
+  .eval-table .prog { flex-wrap: nowrap; gap: 4px; }
+  .eval-table .prog-pill { min-width: 34px; padding: 4px 8px; }
+}
+
+/* evaluation window: period tabs and repeat-entry switcher */
+.eval-nav { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.eval-nav-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.eval-nav-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--mid); margin-right: 4px; }
+.eval-nav .prog-pill.current { box-shadow: 0 0 0 2px var(--gold-hi); }
+.entry-btn { font: inherit; font-size: 12px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--text-2); cursor: pointer; }
+.entry-btn.current { border-color: var(--gold); color: var(--gold-hi); background: var(--gold-soft); }
+.entry-btn:focus-visible { outline: none; box-shadow: var(--focus); }
+.edited-note { font-size: 12px; color: var(--mid); margin: -6px 0 14px; }
+.details-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.details-form .field-full { grid-column: 1 / -1; }
+.details-form-actions { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; }
+@media (max-width: 560px) { .details-form { grid-template-columns: 1fr; } }
+
 /* ══ COMPETENCY COMMENTS ══ */
 .comp-why { margin-top: 10px; }
 .comp-why label { display: block; margin-bottom: 5px; font-size: 11px; font-weight: 600; letter-spacing: 0.6px; color: var(--gold-hi); }
@@ -1147,9 +1179,9 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
               <th>Team Member</th>
               <th>Outlet</th>
               <th>Team</th>
-              <th>Period</th>
-              <th>Eval Date</th>
-              <th>Submitted By</th>
+              <th>14 · 30 · 45 · 60 Day</th>
+              <th>Latest Eval</th>
+              <th>Latest By</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -1169,6 +1201,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
       <h2 id="modal-title">Evaluation Detail</h2>
       <div class="modal-actions">
         <button type="button" class="btn btn-outline btn-sm" id="pdf-btn" onclick="downloadEvaluationPdf()">⬇ Download PDF</button>
+        <button type="button" class="btn btn-outline btn-sm" id="edit-eval-btn" onclick="startEditDetails()" hidden>Edit details</button>
         <button type="button" class="btn btn-danger-ghost btn-sm" id="delete-eval-btn" onclick="deleteEvaluation()" hidden>Delete</button>
         <button class="modal-close" onclick="closeDetailModal()" aria-label="Close">✕</button>
       </div>
@@ -1218,6 +1251,7 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 <script src="drafts-core.js"></script>
 <script src="contrib-ui.js"></script>
 <script src="teams-core.js"></script>
+<script src="evals-core.js"></script>
 <script src="teams-ui.js"></script>
 <script src="fx.js"></script>
 <script src="softskills.js"></script>
@@ -2166,6 +2200,8 @@ function clearFilters() {
   renderEvalTable(allEvals);
 }
 
+// One row per team member (same name on the same team), with a pill for each period.
+// A period with several submissions shows a count; they open together in the evaluation window.
 function renderEvalTable(evals) {
   const tbody = document.getElementById('eval-table-body');
   if (!evals.length) {
@@ -2175,22 +2211,34 @@ function renderEvalTable(evals) {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">📋</div><p>${esc(msg)}</p></div></td></tr>`;
     return;
   }
-  tbody.innerHTML = evals.map(e => {
-    const date = esc(e.evalDate || '—');
+  tbody.innerHTML = PrideEvals.groupEvals(evals).map(g => {
+    const e = g.latest;
     const sub = e.submittedAt?.toDate ? e.submittedAt.toDate().toLocaleDateString() : '—';
     const lvl = e.roleLevel || PrideSkills.roleLevel(e.position);
     const areaTag = e.area || PrideSkills.areaFor(e.position);
-    const flag = PrideSkills.flaggedSkills(e.softSkills).length ? ' <span class="chip flag-chip" title="A critical soft skill was rated Improves">⚠ Critical</span>' : '';
+    const all = Object.values(g.byPeriod).flat();
+    const flag = all.some(x => PrideSkills.flaggedSkills(x.softSkills).length)
+      ? ' <span class="chip flag-chip" title="A critical soft skill was rated Improves">⚠ Critical</span>' : '';
+    const pills = [...PrideEvals.PERIODS, ...g.otherPeriods].map(p => progPillHtml(g.byPeriod[p], p)).join('');
     return `<tr>
       <td><strong>${esc(e.tmName)}</strong><br><small style="color:var(--mid)">${esc(e.position||'')}</small>${areaTag ? ` <span class="chip">${esc(areaTag)}</span>` : ''}${lvl === 'leadership' ? ' <span class="chip">Leadership</span>' : ''}${flag}</td>
       <td data-label="Outlet">${esc(e.outlet||'—')}</td>
       <td data-label="Team">${teamCellHtml(e)}</td>
-      <td data-label="Period"><span class="period-pill">${esc(e.period)}-Day</span></td>
-      <td data-label="Eval date">${date}</td>
-      <td data-label="Submitted by"><span><small>${esc(e.submittedByName||e.submittedBy||'—')}</small><br><small style="color:var(--mid)">${esc(sub)}</small></span></td>
+      <td data-label="Progress"><div class="prog">${pills}</div></td>
+      <td data-label="Latest eval">${esc(e.evalDate || '—')}<br><small style="color:var(--mid)">${esc(e.period)}-Day</small></td>
+      <td data-label="Latest by"><span><small>${esc(e.submittedByName||e.submittedBy||'—')}</small><br><small style="color:var(--mid)">${esc(sub)}</small></span></td>
       <td data-label=""><button class="btn btn-outline btn-sm" data-action="view-eval" data-id="${esc(e.id)}">View</button></td>
     </tr>`;
   }).join('');
+}
+
+// A period pill: filled (and clickable) when there is a submission, dashed when there is not
+function progPillHtml(list, period, current = false) {
+  if (!list || !list.length) return `<span class="prog-pill missing" title="No ${period}-Day evaluation yet">${period}</span>`;
+  const flagged = list.some(x => PrideSkills.flaggedSkills(x.softSkills).length);
+  const n = list.length;
+  const title = `${period}-Day evaluation${n > 1 ? ` (${n} submissions)` : ''}${flagged ? ': critical skill needs attention' : ''}`;
+  return `<button type="button" class="prog-pill done${flagged ? ' flagged' : ''}${current ? ' current' : ''}" data-action="view-eval" data-id="${esc(list[0].id)}" title="${esc(title)}" aria-label="${esc(title)}">${period}${n > 1 ? `<span class="prog-count">×${n}</span>` : ''}</button>`;
 }
 
 // One signature: the drawn image when there is one (validated, since it comes from the database),
@@ -2276,6 +2324,7 @@ function openDetail(id) {
   delBtn.hidden = !currentIsAdmin;
   delBtn.disabled = false;
   delBtn.textContent = 'Delete';
+  document.getElementById('edit-eval-btn').hidden = !canEditDetails(e);
 
   const ratingLabel = v => PrideSkills.RATING_WORDS[v] || '—';
 
@@ -2283,6 +2332,9 @@ function openDetail(id) {
   const compComments = e.competencyComments || {};
 
   document.getElementById('modal-body').innerHTML = `
+    ${evalNavHtml(e)}
+    ${e.editedAt ? `<p class="edited-note">Details corrected by ${esc(e.editedBy || '—')}${e.editedAt.toDate ? ' on ' + esc(e.editedAt.toDate().toLocaleDateString()) : ''}. See Activity for what changed.</p>` : ''}
+    <div id="details-form-slot"></div>
     <div class="detail-grid">
       <div class="detail-item"><label>Outlet</label><p>${esc(e.outlet||'—')}</p></div>
       <div class="detail-item"><label>Position</label><p>${esc(e.position||'—')}</p></div>
@@ -2335,6 +2387,119 @@ function openDetail(id) {
   document.getElementById('detail-modal').classList.add('open');
   initContributions(id);
 }
+// Period tabs for this team member, plus a switcher when this period has several submissions
+function evalNavHtml(e) {
+  const group = PrideEvals.groupEvals(allEvals.filter(x => PrideEvals.groupKey(x) === PrideEvals.groupKey(e)))[0];
+  if (!group) return '';
+  const periods = [...PrideEvals.PERIODS, ...group.otherPeriods];
+  const tabs = periods.map(p => {
+    const list = group.byPeriod[p];
+    // The current period's pill points at this entry, not the newest one
+    return progPillHtml(list && Number(p) === Number(e.period) ? [e, ...list.filter(x => x.id !== e.id)] : list, p, Number(p) === Number(e.period));
+  }).join('');
+  const sibs = PrideEvals.siblings(allEvals, e);
+  const entries = sibs.length > 1 ? `<div class="eval-nav-row">
+      <span class="eval-nav-label">${sibs.length} submissions for ${esc(e.period)}-Day</span>
+      ${sibs.map(x => `<button type="button" class="entry-btn${x.id === e.id ? ' current' : ''}" data-action="view-eval" data-id="${esc(x.id)}"${x.id === e.id ? ' aria-current="true"' : ''}>
+        ${esc(x.submittedByName || x.submittedBy || '—')} · ${esc(x.evalDate || (x.submittedAt?.toDate ? x.submittedAt.toDate().toLocaleDateString() : ''))}</button>`).join('')}
+    </div>` : '';
+  return `<div class="eval-nav"><div class="eval-nav-row"><span class="eval-nav-label">Periods</span>${tabs}</div>${entries}</div>`;
+}
+
+// ── Editing the header details (submitter or admin; see firestore.rules detailsEntry) ──
+function canEditDetails(e) {
+  return !!currentUser && (currentIsAdmin || e.submittedBy === currentUser.email);
+}
+
+function startEditDetails() {
+  const e = allEvals.find(x => x.id === detailEvalId);
+  if (!e || !canEditDetails(e)) return;
+  const d = PrideEvals.detailsOf(e);
+  const optionsFrom = (id, value) => {
+    const opts = [...document.getElementById(id).options].map(o => [o.value, o.textContent]);
+    if (value && !opts.some(([v]) => v === value)) opts.push([value, value]);
+    return opts.map(([v, t]) => `<option value="${esc(v)}"${v === value ? ' selected' : ''}>${esc(t)}</option>`).join('');
+  };
+  document.getElementById('details-form-slot').innerHTML = `
+    <form class="details-form section-card" style="padding:18px" onsubmit="saveDetails(); return false;">
+      <div class="field field-full"><label for="ed-tmName">Team Member Name</label><input type="text" id="ed-tmName" maxlength="100" value="${esc(d.tmName)}"></div>
+      <div class="field"><label for="ed-position">Position</label><select id="ed-position">${optionsFrom('f-position', d.position)}</select></div>
+      <div class="field"><label for="ed-outlet">Outlet / Location</label><input type="text" id="ed-outlet" maxlength="200" value="${esc(d.outlet)}"></div>
+      <div class="field"><label for="ed-area">Area</label><select id="ed-area">${optionsFrom('f-area', d.area)}</select></div>
+      <div class="field"><label for="ed-period">Period</label><select id="ed-period">${PrideEvals.PERIODS.map(p => `<option value="${p}"${p === d.period ? ' selected' : ''}>${p}-Day</option>`).join('')}</select></div>
+      <div class="field"><label for="ed-startDate">Start Date</label><input type="date" id="ed-startDate" value="${esc(d.startDate)}"></div>
+      <div class="field"><label for="ed-evalDate">Eval Date</label><input type="date" id="ed-evalDate" value="${esc(d.evalDate)}"></div>
+      <p class="field-hint field-full" style="margin:0 0 12px">Ratings, comments and signatures can't be changed. Your correction is recorded in the Activity log.</p>
+      <div class="error-msg field-full" id="ed-error" role="alert"></div>
+      <div class="details-form-actions">
+        <button type="submit" class="btn btn-primary btn-sm" id="ed-save">Save changes</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="cancelEditDetails()">Cancel</button>
+      </div>
+    </form>`;
+  document.querySelector('#modal-body .detail-grid').hidden = true;
+  document.getElementById('edit-eval-btn').hidden = true;
+  document.getElementById('ed-tmName').focus();
+}
+
+function cancelEditDetails() {
+  document.getElementById('details-form-slot').innerHTML = '';
+  document.querySelector('#modal-body .detail-grid').hidden = false;
+  const e = allEvals.find(x => x.id === detailEvalId);
+  document.getElementById('edit-eval-btn').hidden = !(e && canEditDetails(e));
+}
+
+async function saveDetails() {
+  const e = allEvals.find(x => x.id === detailEvalId);
+  if (!e) return;
+  const err = document.getElementById('ed-error');
+  const btn = document.getElementById('ed-save');
+  const fail = m => { err.textContent = m; err.classList.add('show'); };
+  err.classList.remove('show');
+
+  const before = PrideEvals.detailsOf(e);
+  const after = {
+    tmName: document.getElementById('ed-tmName').value.trim().replace(/\s+/g, ' '),
+    position: document.getElementById('ed-position').value,
+    outlet: document.getElementById('ed-outlet').value.trim(),
+    area: document.getElementById('ed-area').value,
+    startDate: document.getElementById('ed-startDate').value,
+    evalDate: document.getElementById('ed-evalDate').value,
+    period: Number(document.getElementById('ed-period').value),
+  };
+  const problem = PrideEvals.validateDetails(after);
+  if (problem) return fail(problem);
+  const changes = PrideEvals.diffDetails(before, after);
+  if (!changes.length) return cancelEditDetails();
+
+  const rev = (e.detailsRev || 0) + 1;
+  const update = { detailsRev: rev, editedBy: currentUser.email, editedAt: firebase.firestore.FieldValue.serverTimestamp() };
+  changes.forEach(c => { update[c.field] = after[c.field]; });
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const ref = db.collection('evaluations').doc(e.id);
+    const batch = db.batch();
+    batch.update(ref, update);
+    batch.set(ref.collection('activity').doc(`details_${rev}`), {
+      type: 'details', contributionId: null, rev,
+      byEmail: currentUser.email, byName: currentUser.displayName || currentUser.email,
+      at: firebase.firestore.FieldValue.serverTimestamp(), before, after,
+    });
+    await batch.commit();
+    changes.forEach(c => { e[c.field] = after[c.field]; });
+    Object.assign(e, { detailsRev: rev, editedBy: currentUser.email, editedAt: { toDate: () => new Date() } });
+    filterEvals();
+    openDetail(e.id);
+  } catch (ex) {
+    console.error(ex);
+    fail('Could not save: ' + (ex.code === 'permission-denied'
+      ? 'you can only correct evaluations you submitted (admins can correct any). If that is you, reload the page and try again.'
+      : (ex.message || ex)));
+    btn.disabled = false;
+    btn.textContent = 'Save changes';
+  }
+}
+
 function closeDetailModal() {
   document.getElementById('detail-modal').classList.remove('open');
 }
@@ -2350,6 +2515,10 @@ function esc(s) {
 document.getElementById('eval-table-body').addEventListener('click', e => {
   const btn = e.target.closest('[data-action="view-eval"]');
   if (btn) openDetail(btn.dataset.id);
+});
+document.getElementById('modal-body').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action="view-eval"]');
+  if (btn && btn.dataset.id !== detailEvalId) openDetail(btn.dataset.id);
 });
 
 PrideFx.init();
